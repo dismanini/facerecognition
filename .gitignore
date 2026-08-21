@@ -1,0 +1,51 @@
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+.cache/
+
+# Logs
+logs/
+*.log
+
+# Vite/React
+.vite/
+.vscode/
+
+# OS generated
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.*   # .env.local, .env.production, etc.
+
+# Optional IDE/Editor folders
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Mac system files
+.AppleDouble
+.LSOverride
+
+# Windows system files
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# Test coverage
+coverage/
+
+# Optional: ignore all pem/key/cert files
+*.pem
+*.key
+*.crt
+
+# Optional: ignore custom secrets/config folders
+secrets/
+config/private/
