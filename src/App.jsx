@@ -802,6 +802,11 @@ function App() {
 
         </section>
 
+        {/* ====================================================
+            HEALTH DASHBOARD
+        ==================================================== */}
+
+      
 
         {/* ====================================================
             DETECTION SUMMARY
@@ -960,13 +965,58 @@ function App() {
 
         )}
 
-
-        
         {/* ====================================================
-            HEALTH DASHBOARD
+            CAPTURED IMAGE
         ==================================================== */}
 
-        <section className="health-section">
+        {capturedImage && (
+
+          <section className="captured-section">
+
+            <div className="section-heading">
+
+              <div>
+
+                <h3>
+                  Captured Image
+                </h3>
+
+                <p>
+                  Image captured manually
+                </p>
+
+              </div>
+
+            </div>
+
+            <div className="captured-content">
+
+              <img
+                src={capturedImage}
+                alt="Captured face"
+                className="captured-image"
+              />
+
+              <button
+                onClick={downloadImage}
+                className="control-btn primary"
+              >
+
+                <Download size={19} />
+
+                Download Image
+
+              </button>
+
+            </div>
+
+          </section>
+
+        )}
+
+
+
+          <section className="health-section">
 
           <div className="section-heading">
 
@@ -1174,55 +1224,6 @@ function App() {
         </section>
 
         {/* ====================================================
-            CAPTURED IMAGE
-        ==================================================== */}
-
-        {capturedImage && (
-
-          <section className="captured-section">
-
-            <div className="section-heading">
-
-              <div>
-
-                <h3>
-                  Captured Image
-                </h3>
-
-                <p>
-                  Image captured manually
-                </p>
-
-              </div>
-
-            </div>
-
-            <div className="captured-content">
-
-              <img
-                src={capturedImage}
-                alt="Captured face"
-                className="captured-image"
-              />
-
-              <button
-                onClick={downloadImage}
-                className="control-btn primary"
-              >
-
-                <Download size={19} />
-
-                Download Image
-
-              </button>
-
-            </div>
-
-          </section>
-
-        )}
-
-        {/* ====================================================
             MEDICAL NOTICE
         ==================================================== */}
 
@@ -1272,7 +1273,7 @@ function App() {
             </strong>
 
             <p>
-              Powered by eTouchUS
+              Powered by etouchUs
             </p>
 
           </div>
