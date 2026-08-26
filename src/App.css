@@ -83,7 +83,7 @@ button {
 }
 
 .logo-container {
-  width: 58px;
+  /* width: 58px; */
   height: 58px;
 
   display: flex;
@@ -1254,7 +1254,7 @@ button {
 }
 
 .footer-logo {
-  width: 45px;
+  /* width: 45px; */
   height: 45px;
 
   object-fit: contain;
@@ -1402,7 +1402,7 @@ button {
 @media (max-width: 450px) {
 
   .logo-container {
-    width: 48px;
+    /* width: 48px; */
     height: 48px;
   }
 
