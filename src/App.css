@@ -1,41 +1,37 @@
-/* ============================================================
-   RESET
-============================================================ */
-
 * {
   box-sizing: border-box;
+}
+
+html {
   margin: 0;
   padding: 0;
 }
 
-html {
-  scroll-behavior: smooth;
-}
-
 body {
+  margin: 0;
+  padding: 0;
   font-family:
     Inter,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    Roboto,
     Arial,
+    Helvetica,
     sans-serif;
-
   background: #f4f7fb;
   color: #172033;
-  line-height: 1.5;
 }
 
 button,
 input {
-  font: inherit;
+  font-family: inherit;
 }
 
 button {
   cursor: pointer;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 
 /* ============================================================
    APP
@@ -46,34 +42,33 @@ button {
   background:
     linear-gradient(
       180deg,
-      #f7faff 0%,
+      #f8fbff 0%,
       #f4f7fb 100%
     );
 }
-
 
 /* ============================================================
    HEADER
 ============================================================ */
 
 .header {
-  width: 100%;
   background: #ffffff;
   border-bottom: 1px solid #e5eaf1;
-  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+  position: sticky;
+  top: 0;
+  z-index: 20;
 }
 
 .header-content {
-  width: min(1400px, calc(100% - 40px));
+  max-width: 1400px;
   margin: 0 auto;
-
-  min-height: 88px;
+  padding: 15px 28px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  gap: 25px;
+  gap: 20px;
 }
 
 .brand {
@@ -83,7 +78,7 @@ button {
 }
 
 .logo-container {
-  /* width: 58px; */
+  width: 58px;
   height: 58px;
 
   display: flex;
@@ -91,8 +86,9 @@ button {
   justify-content: center;
 
   border-radius: 14px;
-  background: #ffffff;
   overflow: hidden;
+
+  background: #ffffff;
 }
 
 .logo {
@@ -102,58 +98,50 @@ button {
 }
 
 .brand-text h1 {
-  font-size: 21px;
+  margin: 0;
+  font-size: 20px;
   font-weight: 750;
-  color: #101828;
-  line-height: 1.25;
+  color: #172033;
 }
 
 .brand-text p {
-  margin-top: 4px;
-
+  margin: 4px 0 0;
+  color: #6b7280;
   font-size: 13px;
-  color: #667085;
 }
 
 .model-status {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 7px;
 
-  padding: 9px 14px;
+  padding: 9px 13px;
 
   border-radius: 999px;
 
   font-size: 13px;
   font-weight: 650;
-
-  white-space: nowrap;
 }
 
 .model-status.ready {
-  color: #087443;
   background: #ecfdf3;
-  border: 1px solid #abefc6;
+  color: #15803d;
 }
 
 .model-status.loading {
-  color: #b54708;
-  background: #fffaeb;
-  border: 1px solid #fedf89;
+  background: #fff7ed;
+  color: #c2410c;
 }
-
 
 /* ============================================================
    MAIN
 ============================================================ */
 
 .main {
-  width: min(1400px, calc(100% - 40px));
+  max-width: 1400px;
   margin: 0 auto;
-
-  padding: 35px 0 60px;
+  padding: 34px 28px 50px;
 }
-
 
 /* ============================================================
    PAGE TITLE
@@ -164,22 +152,20 @@ button {
 }
 
 .page-title h2 {
+  margin: 0;
   font-size: 30px;
   line-height: 1.2;
-  font-weight: 750;
-  color: #101828;
+  color: #111827;
 }
 
 .page-title p {
-  margin-top: 8px;
-
-  color: #667085;
+  margin: 8px 0 0;
+  color: #64748b;
   font-size: 15px;
 }
 
-
 /* ============================================================
-   CONTROL SECTION
+   CONTROLS
 ============================================================ */
 
 .control-section {
@@ -188,31 +174,22 @@ button {
 
 .controls {
   display: flex;
-  align-items: center;
   flex-wrap: wrap;
-
   gap: 10px;
 }
 
-
-/* ============================================================
-   BUTTONS
-============================================================ */
-
 .control-btn {
-  border: none;
-
-  min-height: 43px;
+  min-height: 44px;
 
   padding: 0 17px;
-
-  border-radius: 9px;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   gap: 8px;
+
+  border: 0;
+  border-radius: 9px;
 
   font-size: 14px;
   font-weight: 650;
@@ -220,27 +197,16 @@ button {
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
-    background 0.15s ease,
-    opacity 0.15s ease;
+    background 0.15s ease;
 }
 
 .control-btn:hover:not(:disabled) {
   transform: translateY(-1px);
 }
 
-.control-btn:active:not(:disabled) {
-  transform: translateY(0);
-}
-
-.control-btn:disabled {
-  cursor: not-allowed;
-  opacity: 0.55;
-}
-
 .control-btn.primary {
   background: #2563eb;
   color: #ffffff;
-
   box-shadow:
     0 5px 14px rgba(37, 99, 235, 0.2);
 }
@@ -251,9 +217,9 @@ button {
 
 .control-btn.secondary {
   background: #ffffff;
-  color: #344054;
+  color: #334155;
 
-  border: 1px solid #d0d5dd;
+  border: 1px solid #d9e0ea;
 }
 
 .control-btn.secondary:hover:not(:disabled) {
@@ -263,15 +229,11 @@ button {
 .control-btn.danger {
   background: #dc2626;
   color: #ffffff;
-
-  box-shadow:
-    0 5px 14px rgba(220, 38, 38, 0.18);
 }
 
 .control-btn.danger:hover:not(:disabled) {
   background: #b91c1c;
 }
-
 
 /* ============================================================
    SETTINGS
@@ -284,31 +246,27 @@ button {
 
   background: #ffffff;
 
-  border: 1px solid #e4e7ec;
-
+  border: 1px solid #e3e8ef;
   border-radius: 12px;
 
   box-shadow:
-    0 5px 18px rgba(15, 23, 42, 0.05);
-
-  max-width: 600px;
+    0 5px 20px rgba(15, 23, 42, 0.04);
 }
 
 .settings-title {
   display: flex;
   align-items: center;
   gap: 9px;
-
   margin-bottom: 18px;
 }
 
 .settings-title h3 {
-  font-size: 15px;
-  font-weight: 700;
+  margin: 0;
+  font-size: 16px;
 }
 
 .setting-item {
-  width: 100%;
+  max-width: 600px;
 }
 
 .setting-label {
@@ -334,12 +292,11 @@ button {
   display: flex;
   justify-content: space-between;
 
-  margin-top: 6px;
+  margin-top: 5px;
 
-  color: #98a2b3;
   font-size: 12px;
+  color: #94a3b8;
 }
-
 
 /* ============================================================
    ERROR
@@ -350,83 +307,26 @@ button {
   align-items: flex-start;
   gap: 12px;
 
-  margin-bottom: 20px;
-
   padding: 15px 17px;
 
-  background: #fef3f2;
-  border: 1px solid #fecdca;
+  margin-bottom: 22px;
 
+  background: #fff1f2;
+  color: #991b1b;
+
+  border: 1px solid #fecdd3;
   border-radius: 10px;
-
-  color: #b42318;
-}
-
-.error-message svg {
-  flex-shrink: 0;
-  margin-top: 2px;
 }
 
 .error-message strong {
-  font-size: 14px;
+  display: block;
+  margin-bottom: 3px;
 }
 
 .error-message p {
-  margin-top: 3px;
-
+  margin: 0;
   font-size: 13px;
 }
-
-
-/* ============================================================
-   LOADING
-============================================================ */
-
-.loading {
-  margin-bottom: 25px;
-
-  padding: 45px 25px;
-
-  background: #ffffff;
-
-  border: 1px solid #e4e7ec;
-  border-radius: 14px;
-
-  text-align: center;
-}
-
-.loading-spinner,
-.processing-spinner {
-  width: 32px;
-  height: 32px;
-
-  margin: 0 auto 14px;
-
-  border: 3px solid #dbeafe;
-  border-top-color: #2563eb;
-
-  border-radius: 50%;
-
-  animation: spin 0.8s linear infinite;
-}
-
-.loading h3 {
-  font-size: 17px;
-}
-
-.loading p {
-  margin-top: 6px;
-
-  color: #667085;
-  font-size: 13px;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
 
 /* ============================================================
    CAMERA CARD
@@ -435,48 +335,37 @@ button {
 .camera-card {
   background: #ffffff;
 
-  border: 1px solid #e4e7ec;
-
+  border: 1px solid #e1e7ef;
   border-radius: 15px;
 
   overflow: hidden;
 
   box-shadow:
-    0 6px 20px rgba(15, 23, 42, 0.05);
+    0 8px 30px rgba(15, 23, 42, 0.05);
 
-  margin-bottom: 25px;
+  margin-bottom: 28px;
 }
 
 .camera-header {
-  min-height: 76px;
-
-  padding: 16px 20px;
+  padding: 18px 20px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  gap: 15px;
-
-  border-bottom: 1px solid #eaecf0;
+  border-bottom: 1px solid #edf0f4;
 }
 
 .camera-header h3 {
+  margin: 0;
   font-size: 17px;
-  font-weight: 700;
 }
 
 .camera-header p {
-  margin-top: 3px;
-
-  color: #667085;
+  margin: 5px 0 0;
+  color: #64748b;
   font-size: 13px;
 }
-
-
-/* ============================================================
-   CAMERA INDICATOR
-============================================================ */
 
 .camera-indicator {
   display: flex;
@@ -485,100 +374,68 @@ button {
 
   padding: 7px 11px;
 
+  background: #f1f5f9;
+
+  color: #64748b;
+
   border-radius: 999px;
 
-  color: #667085;
-  background: #f2f4f7;
-
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 700;
 }
 
 .camera-indicator span {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 
   border-radius: 50%;
 
-  background: #98a2b3;
+  background: #94a3b8;
 }
 
 .camera-indicator.active {
-  color: #087443;
   background: #ecfdf3;
+  color: #15803d;
 }
 
 .camera-indicator.active span {
-  background: #12b76a;
-
-  box-shadow:
-    0 0 0 4px rgba(18, 183, 106, 0.12);
+  background: #22c55e;
 }
-
 
 /* ============================================================
    CAMERA CONTAINER
 ============================================================ */
 
 .camera-container {
-  width: 100%;
-
-  min-height: 520px;
-
-  background:
-    radial-gradient(
-      circle at center,
-      #182334 0%,
-      #0f1724 55%,
-      #090f19 100%
-    );
+  background: #0b1220;
+  min-height: 560px;
 
   display: flex;
   align-items: center;
   justify-content: center;
-
-  padding: 20px;
 }
-
-
-/* ============================================================
-   VIDEO WRAPPER
-============================================================ */
 
 .video-wrapper {
   position: relative;
 
-  width: min(100%, 1000px);
-
-  aspect-ratio: 16 / 9;
-
-  background: #000000;
-
-  border-radius: 12px;
+  width: 100%;
+  max-width: 1280px;
 
   overflow: hidden;
 
-  box-shadow:
-    0 15px 40px rgba(0, 0, 0, 0.35);
+  background: #000;
 }
 
 .webcam {
-  position: absolute;
-
-  inset: 0;
-
   width: 100%;
-  height: 100%;
+  height: auto;
 
-  object-fit: cover;
+  min-height: 500px;
 
   display: block;
+
+  object-fit: cover;
 }
-
-
-/* ============================================================
-   DETECTION CANVAS
-============================================================ */
 
 .detection-canvas {
   position: absolute;
@@ -589,11 +446,8 @@ button {
   width: 100%;
   height: 100%;
 
-  z-index: 5;
-
   pointer-events: none;
 }
-
 
 /* ============================================================
    SCAN FRAME
@@ -602,162 +456,141 @@ button {
 .scan-frame {
   position: absolute;
 
-  z-index: 6;
+  top: 8%;
+  left: 25%;
 
-  left: 50%;
-  top: 50%;
-
-  width: 270px;
-  height: 350px;
-
-  transform: translate(-50%, -50%);
+  width: 50%;
+  height: 84%;
 
   pointer-events: none;
-
-  opacity: 0.65;
 }
 
 .corner {
   position: absolute;
 
-  width: 35px;
-  height: 35px;
+  width: 40px;
+  height: 40px;
 
-  border-color: #ffffff;
+  border-color: #22c55e;
   border-style: solid;
 }
 
 .corner.top-left {
-  left: 0;
   top: 0;
-
+  left: 0;
   border-width: 3px 0 0 3px;
-
-  border-top-left-radius: 8px;
 }
 
 .corner.top-right {
-  right: 0;
   top: 0;
-
+  right: 0;
   border-width: 3px 3px 0 0;
-
-  border-top-right-radius: 8px;
 }
 
 .corner.bottom-left {
-  left: 0;
   bottom: 0;
-
+  left: 0;
   border-width: 0 0 3px 3px;
-
-  border-bottom-left-radius: 8px;
 }
 
 .corner.bottom-right {
   right: 0;
   bottom: 0;
-
   border-width: 0 3px 3px 0;
-
-  border-bottom-right-radius: 8px;
 }
 
-
 /* ============================================================
-   PROCESSING OVERLAY
+   PROCESSING
 ============================================================ */
 
 .processing-overlay {
   position: absolute;
 
-  z-index: 10;
+  left: 50%;
+  bottom: 18px;
 
-  left: 15px;
-  bottom: 15px;
+  transform: translateX(-50%);
 
   display: flex;
   align-items: center;
   gap: 9px;
 
-  padding: 8px 12px;
+  padding: 9px 14px;
 
+  background: rgba(0, 0, 0, 0.7);
   color: #ffffff;
 
-  background: rgba(15, 23, 42, 0.78);
-
-  border: 1px solid rgba(255, 255, 255, 0.15);
-
-  border-radius: 8px;
+  border-radius: 999px;
 
   font-size: 12px;
   font-weight: 600;
-
-  backdrop-filter: blur(6px);
 }
 
 .processing-spinner {
-  width: 15px;
-  height: 15px;
+  width: 14px;
+  height: 14px;
 
-  margin: 0;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
 
-  border-width: 2px;
+  border-radius: 50%;
+
+  animation: spin 0.8s linear infinite;
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 /* ============================================================
    CAMERA PLACEHOLDER
 ============================================================ */
 
 .camera-placeholder {
-  width: min(100%, 700px);
-
-  min-height: 400px;
+  width: 100%;
+  min-height: 560px;
 
   display: flex;
   flex-direction: column;
-
   align-items: center;
   justify-content: center;
 
-  text-align: center;
-
-  color: #ffffff;
+  color: #cbd5e1;
 }
 
 .placeholder-icon {
-  width: 100px;
-  height: 100px;
-
-  margin-bottom: 18px;
-
-  border-radius: 50%;
+  width: 95px;
+  height: 95px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  background: rgba(255, 255, 255, 0.08);
+  background: #172033;
 
-  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 50%;
+
+  margin-bottom: 20px;
 }
 
 .camera-placeholder h3 {
+  margin: 0 0 8px;
+
+  color: #ffffff;
   font-size: 20px;
 }
 
 .camera-placeholder p {
-  margin-top: 7px;
+  margin: 0;
 
-  color: #aab4c3;
-
+  color: #94a3b8;
   font-size: 14px;
 }
 
-
 /* ============================================================
-   SECTION HEADINGS
+   SECTION HEADING
 ============================================================ */
 
 .section-heading {
@@ -765,245 +598,215 @@ button {
   align-items: center;
   justify-content: space-between;
 
-  gap: 15px;
+  gap: 20px;
 
   margin-bottom: 18px;
 }
 
 .section-heading h3 {
+  margin: 0;
   font-size: 19px;
-  font-weight: 720;
-  color: #101828;
 }
 
 .section-heading p {
-  margin-top: 3px;
+  margin: 5px 0 0;
 
-  color: #667085;
-
+  color: #64748b;
   font-size: 13px;
 }
 
+.detection-status,
+.health-disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 7px 11px;
+
+  background: #eff6ff;
+  color: #2563eb;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  font-weight: 700;
+}
 
 /* ============================================================
    DETECTIONS
 ============================================================ */
 
 .detections-panel {
-  margin-bottom: 25px;
-
-  padding: 22px;
-
-  background: #ffffff;
-
-  border: 1px solid #e4e7ec;
-
-  border-radius: 15px;
-
-  box-shadow:
-    0 6px 20px rgba(15, 23, 42, 0.04);
-}
-
-.detection-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-
-  padding: 7px 11px;
-
-  border-radius: 999px;
-
-  color: #087443;
-  background: #ecfdf3;
-
-  border: 1px solid #abefc6;
-
-  font-size: 12px;
-  font-weight: 650;
+  margin-bottom: 28px;
 }
 
 .detections-grid {
   display: grid;
 
   grid-template-columns:
-    repeat(auto-fit, minmax(260px, 1fr));
+    repeat(auto-fit, minmax(280px, 1fr));
 
   gap: 15px;
 }
 
 .detection-card {
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+
   padding: 18px;
 
-  background: #f8fafc;
-
-  border: 1px solid #e4e7ec;
-
-  border-radius: 12px;
+  box-shadow:
+    0 4px 15px rgba(15, 23, 42, 0.04);
 }
 
 .face-card-header {
   display: flex;
   align-items: center;
-
   gap: 11px;
 
-  padding-bottom: 15px;
+  padding-bottom: 14px;
 
-  border-bottom: 1px solid #eaecf0;
+  border-bottom: 1px solid #edf0f4;
 }
 
 .face-icon {
-  width: 42px;
-  height: 42px;
-
-  flex-shrink: 0;
+  width: 43px;
+  height: 43px;
 
   display: flex;
   align-items: center;
   justify-content: center;
 
-  border-radius: 10px;
-
+  background: #eff6ff;
   color: #2563eb;
 
-  background: #eff6ff;
+  border-radius: 10px;
 }
 
 .face-card-header h4 {
+  margin: 0;
+
   font-size: 15px;
-  font-weight: 700;
 }
 
 .face-card-header span {
   display: block;
 
-  margin-top: 2px;
+  margin-top: 3px;
 
-  color: #12b76a;
-
+  color: #22c55e;
   font-size: 12px;
   font-weight: 600;
 }
 
 .detection-info {
-  margin-top: 14px;
+  padding-top: 8px;
 }
 
 .info-item {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-
-  gap: 10px;
 
   padding: 8px 0;
 
-  border-bottom: 1px solid #eaecf0;
+  border-bottom: 1px solid #f1f5f9;
 }
 
 .info-item:last-child {
-  border-bottom: none;
+  border-bottom: 0;
 }
 
-.info-item .label {
-  color: #667085;
-  font-size: 12px;
+.label {
+  color: #64748b;
+  font-size: 13px;
 }
 
-.info-item .value {
-  color: #101828;
+.value {
+  color: #172033;
   font-size: 13px;
   font-weight: 700;
 }
-
 
 /* ============================================================
    CAPTURED SECTION
 ============================================================ */
 
 .captured-section {
-  margin-bottom: 25px;
+  margin-bottom: 30px;
 
-  padding: 22px;
+  padding: 20px;
 
   background: #ffffff;
 
-  border: 1px solid #e4e7ec;
-
+  border: 1px solid #e1e7ef;
   border-radius: 15px;
-
-  box-shadow:
-    0 6px 20px rgba(15, 23, 42, 0.04);
 }
 
 .captured-content {
   display: grid;
 
   grid-template-columns:
-    minmax(300px, 1fr)
-    minmax(280px, 1fr);
+    minmax(300px, 1.2fr)
+    minmax(280px, 0.8fr);
 
   gap: 25px;
+}
 
-  align-items: start;
+.captured-image-wrapper {
+  overflow: hidden;
+
+  background: #000;
+
+  border-radius: 12px;
 }
 
 .captured-image {
   width: 100%;
 
-  max-height: 550px;
-
-  object-fit: contain;
-
-  background: #0f172a;
+  display: block;
 
   border-radius: 12px;
-
-  border: 1px solid #e4e7ec;
 }
 
-.captured-content > div {
+.captured-results {
   display: flex;
   flex-direction: column;
-
-  gap: 15px;
+  gap: 12px;
 }
 
+.captured-results h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.captured-results > p {
+  color: #64748b;
+  font-size: 13px;
+}
+
+.captured-result-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  padding: 14px;
+
+  background: #f8fafc;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+
+  font-size: 13px;
+}
 
 /* ============================================================
-   HEALTH SECTION
+   HEALTH
 ============================================================ */
 
 .health-section {
   margin-bottom: 25px;
-
-  padding: 22px;
-
-  background: #ffffff;
-
-  border: 1px solid #e4e7ec;
-
-  border-radius: 15px;
-
-  box-shadow:
-    0 6px 20px rgba(15, 23, 42, 0.04);
-}
-
-.health-disclaimer {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-
-  padding: 7px 11px;
-
-  color: #475467;
-
-  background: #f2f4f7;
-
-  border-radius: 999px;
-
-  font-size: 12px;
-  font-weight: 600;
 }
 
 .health-grid {
@@ -1012,24 +815,19 @@ button {
   grid-template-columns:
     repeat(3, minmax(0, 1fr));
 
-  gap: 15px;
+  gap: 16px;
 }
 
-
-/* ============================================================
-   HEALTH CARD
-============================================================ */
-
 .health-card {
+  background: #ffffff;
+
+  border: 1px solid #e1e7ef;
+  border-radius: 14px;
+
   padding: 20px;
 
-  min-height: 260px;
-
-  border-radius: 13px;
-
-  border: 1px solid #e4e7ec;
-
-  background: #f8fafc;
+  box-shadow:
+    0 5px 20px rgba(15, 23, 42, 0.04);
 }
 
 .health-card-top {
@@ -1048,105 +846,83 @@ button {
   align-items: center;
   justify-content: center;
 
+  background: #eff6ff;
+  color: #2563eb;
+
   border-radius: 12px;
-
-  background: #ffffff;
-
-  border: 1px solid #e4e7ec;
 }
 
 .health-status {
-  padding: 5px 9px;
-
-  border-radius: 999px;
-
-  background: #ffffff;
-
-  border: 1px solid #e4e7ec;
-
-  color: #667085;
-
+  color: #64748b;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
 
   text-align: right;
 }
 
 .health-card-title {
-  margin-top: 17px;
+  margin-top: 18px;
 
-  color: #475467;
+  color: #475569;
 
   font-size: 14px;
   font-weight: 650;
 }
 
 .health-value {
-  margin-top: 4px;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
 
-  color: #101828;
+  margin-top: 3px;
+
+  color: #111827;
 
   font-size: 38px;
-  font-weight: 750;
-
-  line-height: 1.1;
+  font-weight: 800;
 }
 
 .health-value small {
-  margin-left: 5px;
+  color: #64748b;
 
-  color: #667085;
-
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .health-description {
-  margin-top: 14px;
+  min-height: 40px;
 
-  min-height: 42px;
+  margin: 12px 0;
 
-  color: #667085;
+  color: #64748b;
 
   font-size: 12px;
-
-  line-height: 1.55;
+  line-height: 1.6;
 }
 
 .measurement-message {
-  margin-top: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
 
   padding: 8px 10px;
 
-  display: flex;
-  align-items: center;
+  background: #f8fafc;
 
-  gap: 7px;
+  border-radius: 8px;
 
-  border-radius: 7px;
-
-  color: #475467;
-
-  background: #ffffff;
-
-  border: 1px solid #e4e7ec;
+  color: #64748b;
 
   font-size: 11px;
   font-weight: 600;
 }
 
-
-/* ============================================================
-   BLOOD PRESSURE
-============================================================ */
-
 .bp-values {
-  margin-top: 10px;
-
   display: flex;
-  align-items: flex-end;
+  align-items: center;
+  gap: 9px;
 
-  gap: 7px;
+  margin-top: 10px;
 }
 
 .bp-values > div:not(.bp-slash):not(.bp-unit) {
@@ -1155,40 +931,31 @@ button {
 }
 
 .bp-values strong {
-  color: #101828;
-
   font-size: 32px;
-
   line-height: 1;
 }
 
 .bp-values span {
   margin-top: 4px;
 
-  color: #667085;
+  color: #64748b;
 
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
 }
 
 .bp-slash {
-  color: #98a2b3;
-
+  color: #94a3b8;
   font-size: 28px;
-
-  line-height: 1;
 }
 
 .bp-unit {
-  margin-left: 4px;
-  margin-bottom: 1px;
+  margin-left: auto;
 
-  color: #667085;
+  color: #64748b;
 
-  font-size: 11px;
-  font-weight: 600;
+  font-size: 12px;
 }
-
 
 /* ============================================================
    MEDICAL NOTICE
@@ -1197,38 +964,38 @@ button {
 .medical-notice {
   display: flex;
   align-items: flex-start;
-
   gap: 12px;
 
-  padding: 17px 18px;
+  padding: 16px;
 
-  background: #fffaeb;
+  background: #f8fafc;
 
-  border: 1px solid #fedf89;
-
+  border: 1px solid #dce3ec;
   border-radius: 11px;
 
-  color: #7a2e0e;
+  color: #475569;
 }
 
-.medical-notice svg {
+.medical-notice > svg {
   flex-shrink: 0;
-
   margin-top: 2px;
 }
 
 .medical-notice strong {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #334155;
   font-size: 13px;
 }
 
 .medical-notice p {
-  margin-top: 4px;
+  margin: 0;
 
   font-size: 12px;
-
   line-height: 1.6;
 }
-
 
 /* ============================================================
    FOOTER
@@ -1237,98 +1004,93 @@ button {
 .footer {
   background: #ffffff;
 
-  border-top: 1px solid #e4e7ec;
+  border-top: 1px solid #e5eaf1;
 }
 
 .footer-content {
-  width: min(1400px, calc(100% - 40px));
-
-  min-height: 90px;
+  max-width: 1400px;
 
   margin: 0 auto;
 
+  padding: 22px 28px;
+
   display: flex;
   align-items: center;
-
-  gap: 13px;
+  gap: 12px;
 }
 
 .footer-logo {
-  /* width: 45px; */
+  width: 45px;
   height: 45px;
 
   object-fit: contain;
 }
 
 .footer-content strong {
-  color: #344054;
-
   font-size: 13px;
 }
 
 .footer-content p {
-  margin-top: 2px;
+  margin: 3px 0 0;
 
-  color: #98a2b3;
+  color: #94a3b8;
 
   font-size: 11px;
 }
 
-
 /* ============================================================
-   RESPONSIVE - TABLET
+   RESPONSIVE
 ============================================================ */
 
-@media (max-width: 1000px) {
+@media (max-width: 900px) {
+  .header-content {
+    align-items: flex-start;
+  }
+
+  .brand-text p {
+    display: none;
+  }
+
+  .camera-container {
+    min-height: 400px;
+  }
+
+  .webcam {
+    min-height: 400px;
+  }
+
+  .camera-placeholder {
+    min-height: 400px;
+  }
 
   .health-grid {
-    grid-template-columns:
-      repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
   }
 
   .captured-content {
     grid-template-columns: 1fr;
   }
-
-  .camera-container {
-    min-height: 430px;
-  }
-
 }
 
-
-/* ============================================================
-   RESPONSIVE - MOBILE
-============================================================ */
-
-@media (max-width: 700px) {
-
+@media (max-width: 650px) {
   .header-content {
-    width: min(100% - 24px, 1400px);
-
-    padding: 13px 0;
-
-    align-items: flex-start;
-
-    flex-direction: column;
-  }
-
-  .model-status {
-    align-self: flex-start;
+    padding: 12px 15px;
   }
 
   .brand-text h1 {
-    font-size: 18px;
+    font-size: 16px;
   }
 
-  .brand-text p {
-    font-size: 12px;
+  .model-status {
+    padding: 7px;
+  }
+
+  .model-status span {
+    display: none;
   }
 
   .main {
-    width: calc(100% - 24px);
-
-    padding-top: 25px;
+    padding: 25px 15px 40px;
   }
 
   .page-title h2 {
@@ -1336,111 +1098,47 @@ button {
   }
 
   .controls {
-    width: 100%;
+    display: grid;
+
+    grid-template-columns:
+      repeat(2, 1fr);
   }
 
   .control-btn {
-    flex: 1 1 auto;
+    width: 100%;
+  }
+
+  .camera-header,
+  .section-heading {
+    align-items: flex-start;
   }
 
   .camera-header {
-    align-items: flex-start;
-
     flex-direction: column;
-  }
-
-  .camera-container {
-    min-height: 350px;
-
-    padding: 10px;
-  }
-
-  .video-wrapper {
-    width: 100%;
-
-    aspect-ratio: 4 / 3;
-
-    border-radius: 8px;
-  }
-
-  .scan-frame {
-    width: 180px;
-    height: 240px;
-  }
-
-  .detections-panel,
-  .captured-section,
-  .health-section {
-    padding: 16px;
   }
 
   .section-heading {
-    align-items: flex-start;
-
     flex-direction: column;
-  }
-
-  .health-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .health-card {
-    min-height: auto;
-  }
-
-  .footer-content {
-    width: calc(100% - 24px);
-  }
-
-}
-
-
-/* ============================================================
-   SMALL MOBILE
-============================================================ */
-
-@media (max-width: 450px) {
-
-  .logo-container {
-    /* width: 48px; */
-    height: 48px;
-  }
-
-  .brand {
-    gap: 10px;
-  }
-
-  .brand-text h1 {
-    font-size: 16px;
-  }
-
-  .page-title h2 {
-    font-size: 21px;
-  }
-
-  .controls {
-    flex-direction: column;
-  }
-
-  .control-btn {
-    width: 100%;
   }
 
   .camera-container {
-    min-height: 280px;
+    min-height: 300px;
+  }
+
+  .webcam {
+    min-height: 300px;
   }
 
   .camera-placeholder {
-    min-height: 260px;
+    min-height: 300px;
   }
 
-  .placeholder-icon {
-    width: 75px;
-    height: 75px;
+  .scan-frame {
+    left: 15%;
+    width: 70%;
   }
 
-  .captured-content {
-    gap: 15px;
+  .footer-content {
+    padding: 18px 15px;
   }
-
 }
