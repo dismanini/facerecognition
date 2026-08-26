@@ -1,22 +1,30 @@
+/* ============================================================
+   GLOBAL RESET
+============================================================ */
+
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html {
-  margin: 0;
-  padding: 0;
+  scroll-behavior: smooth;
 }
 
 body {
-  margin: 0;
-  padding: 0;
   font-family:
     Inter,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
     Arial,
-    Helvetica,
     sans-serif;
+
   background: #f4f7fb;
   color: #172033;
+  min-width: 320px;
 }
 
 button,
@@ -30,8 +38,8 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
 }
+
 
 /* ============================================================
    APP
@@ -39,36 +47,40 @@ button:disabled {
 
 .app {
   min-height: 100vh;
+  display: flex;
+  flex-direction: column;
   background:
     linear-gradient(
       180deg,
       #f8fbff 0%,
-      #f4f7fb 100%
+      #f4f7fb 45%,
+      #eef3f8 100%
     );
 }
+
 
 /* ============================================================
    HEADER
 ============================================================ */
 
 .header {
+  width: 100%;
   background: #ffffff;
-  border-bottom: 1px solid #e5eaf1;
-  position: sticky;
-  top: 0;
-  z-index: 20;
+  border-bottom: 1px solid #e5eaf0;
+  box-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
 }
 
 .header-content {
-  max-width: 1400px;
+  width: min(1400px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 15px 28px;
+
+  min-height: 88px;
 
   display: flex;
   align-items: center;
   justify-content: space-between;
 
-  gap: 20px;
+  gap: 24px;
 }
 
 .brand {
@@ -85,8 +97,8 @@ button:disabled {
   align-items: center;
   justify-content: center;
 
-  border-radius: 14px;
   overflow: hidden;
+  border-radius: 12px;
 
   background: #ffffff;
 }
@@ -98,50 +110,67 @@ button:disabled {
 }
 
 .brand-text h1 {
-  margin: 0;
-  font-size: 20px;
+  font-size: 23px;
+  line-height: 1.2;
   font-weight: 750;
   color: #172033;
 }
 
 .brand-text p {
-  margin: 4px 0 0;
-  color: #6b7280;
+  margin-top: 5px;
+
   font-size: 13px;
+  line-height: 1.5;
+
+  color: #64748b;
 }
 
-.model-status {
-  display: flex;
-  align-items: center;
-  gap: 7px;
 
-  padding: 9px 13px;
+/* ============================================================
+   MODEL STATUS
+============================================================ */
+
+.model-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 9px 14px;
 
   border-radius: 999px;
 
   font-size: 13px;
   font-weight: 650;
+
+  white-space: nowrap;
 }
 
 .model-status.ready {
-  background: #ecfdf3;
   color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
 }
 
 .model-status.loading {
-  background: #fff7ed;
-  color: #c2410c;
+  color: #b45309;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
 }
+
 
 /* ============================================================
    MAIN
 ============================================================ */
 
 .main {
-  max-width: 1400px;
+  width: min(1400px, calc(100% - 40px));
   margin: 0 auto;
-  padding: 34px 28px 50px;
+
+  flex: 1;
+
+  padding: 35px 0 60px;
 }
+
 
 /* ============================================================
    PAGE TITLE
@@ -152,41 +181,56 @@ button:disabled {
 }
 
 .page-title h2 {
-  margin: 0;
   font-size: 30px;
   line-height: 1.2;
-  color: #111827;
+
+  font-weight: 750;
+
+  color: #172033;
 }
 
 .page-title p {
-  margin: 8px 0 0;
+  margin-top: 8px;
+
+  max-width: 760px;
+
   color: #64748b;
+
   font-size: 15px;
+  line-height: 1.6;
 }
 
+
 /* ============================================================
-   CONTROLS
+   CONTROL SECTION
 ============================================================ */
 
 .control-section {
-  margin-bottom: 25px;
+  margin-bottom: 24px;
 }
 
 .controls {
   display: flex;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 11px;
 }
+
+
+/* ============================================================
+   BUTTONS
+============================================================ */
 
 .control-btn {
   min-height: 44px;
 
-  padding: 0 17px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
+
   gap: 8px;
+
+  padding: 0 17px;
 
   border: 0;
   border-radius: 9px;
@@ -197,16 +241,29 @@ button:disabled {
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
-    background 0.15s ease;
+    background 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .control-btn:hover:not(:disabled) {
   transform: translateY(-1px);
 }
 
+.control-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.control-btn:disabled {
+  opacity: 0.55;
+}
+
+
+/* Primary */
+
 .control-btn.primary {
-  background: #2563eb;
   color: #ffffff;
+  background: #2563eb;
+
   box-shadow:
     0 5px 14px rgba(37, 99, 235, 0.2);
 }
@@ -215,88 +272,91 @@ button:disabled {
   background: #1d4ed8;
 }
 
-.control-btn.secondary {
-  background: #ffffff;
-  color: #334155;
 
-  border: 1px solid #d9e0ea;
+/* Secondary */
+
+.control-btn.secondary {
+  color: #334155;
+  background: #ffffff;
+
+  border: 1px solid #dbe2ea;
+
+  box-shadow: 0 2px 7px rgba(15, 23, 42, 0.04);
 }
 
 .control-btn.secondary:hover:not(:disabled) {
   background: #f8fafc;
+  border-color: #cbd5e1;
 }
 
+
+/* Danger */
+
 .control-btn.danger {
-  background: #dc2626;
   color: #ffffff;
+  background: #dc2626;
+
+  box-shadow:
+    0 5px 14px rgba(220, 38, 38, 0.18);
 }
 
 .control-btn.danger:hover:not(:disabled) {
   background: #b91c1c;
 }
 
+
 /* ============================================================
    SETTINGS
 ============================================================ */
 
 .settings-panel {
-  margin-top: 15px;
+  margin-top: 16px;
+
+  max-width: 650px;
 
   padding: 20px;
 
   background: #ffffff;
 
-  border: 1px solid #e3e8ef;
-  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 13px;
 
   box-shadow:
-    0 5px 20px rgba(15, 23, 42, 0.04);
+    0 8px 25px rgba(15, 23, 42, 0.06);
 }
 
-.settings-title {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  margin-bottom: 18px;
+.settings-panel h3 {
+  margin-bottom: 15px;
+
+  font-size: 17px;
+  color: #172033;
 }
 
-.settings-title h3 {
-  margin: 0;
-  font-size: 16px;
-}
-
-.setting-item {
-  max-width: 600px;
-}
-
-.setting-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.settings-panel label {
+  display: block;
 
   margin-bottom: 10px;
 
+  color: #475569;
+
   font-size: 14px;
+  font-weight: 600;
 }
 
-.setting-label strong {
-  color: #2563eb;
-}
-
-.setting-item input[type="range"] {
+.settings-panel input[type="range"] {
   width: 100%;
+
   accent-color: #2563eb;
 }
 
-.range-labels {
-  display: flex;
-  justify-content: space-between;
+.settings-panel p {
+  margin-top: 8px;
 
-  margin-top: 5px;
+  color: #94a3b8;
 
   font-size: 12px;
-  color: #94a3b8;
 }
+
 
 /* ============================================================
    ERROR
@@ -305,233 +365,74 @@ button:disabled {
 .error-message {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
 
-  padding: 15px 17px;
+  gap: 10px;
 
   margin-bottom: 22px;
 
-  background: #fff1f2;
+  padding: 15px 17px;
+
   color: #991b1b;
 
-  border: 1px solid #fecdd3;
-  border-radius: 10px;
+  background: #fef2f2;
+
+  border: 1px solid #fecaca;
+  border-radius: 11px;
+
+  font-size: 14px;
+  line-height: 1.5;
 }
 
-.error-message strong {
-  display: block;
-  margin-bottom: 3px;
+.error-message svg {
+  flex-shrink: 0;
+
+  margin-top: 1px;
 }
 
-.error-message p {
-  margin: 0;
-  font-size: 13px;
-}
 
 /* ============================================================
-   CAMERA CARD
+   LOADING
 ============================================================ */
 
-.camera-card {
-  background: #ffffff;
+.loading {
+  min-height: 180px;
 
-  border: 1px solid #e1e7ef;
-  border-radius: 15px;
-
-  overflow: hidden;
-
-  box-shadow:
-    0 8px 30px rgba(15, 23, 42, 0.05);
-
-  margin-bottom: 28px;
-}
-
-.camera-header {
-  padding: 18px 20px;
+  margin-bottom: 24px;
 
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
 
-  border-bottom: 1px solid #edf0f4;
+  text-align: center;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 15px;
 }
 
-.camera-header h3 {
-  margin: 0;
+.loading h3 {
+  margin-top: 14px;
+
   font-size: 17px;
 }
 
-.camera-header p {
-  margin: 5px 0 0;
-  color: #64748b;
-  font-size: 13px;
-}
-
-.camera-indicator {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-
-  padding: 7px 11px;
-
-  background: #f1f5f9;
+.loading p {
+  margin-top: 5px;
 
   color: #64748b;
 
-  border-radius: 999px;
-
-  font-size: 12px;
-  font-weight: 700;
+  font-size: 14px;
 }
 
-.camera-indicator span {
-  width: 7px;
-  height: 7px;
-
-  border-radius: 50%;
-
-  background: #94a3b8;
-}
-
-.camera-indicator.active {
-  background: #ecfdf3;
-  color: #15803d;
-}
-
-.camera-indicator.active span {
-  background: #22c55e;
-}
-
-/* ============================================================
-   CAMERA CONTAINER
-============================================================ */
-
-.camera-container {
-  background: #0b1220;
-  min-height: 560px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.video-wrapper {
-  position: relative;
-
-  width: 100%;
-  max-width: 1280px;
-
-  overflow: hidden;
-
-  background: #000;
-}
-
-.webcam {
-  width: 100%;
-  height: auto;
-
-  min-height: 500px;
-
-  display: block;
-
-  object-fit: cover;
-}
-
-.detection-canvas {
-  position: absolute;
-
-  top: 0;
-  left: 0;
-
-  width: 100%;
-  height: 100%;
-
-  pointer-events: none;
-}
-
-/* ============================================================
-   SCAN FRAME
-============================================================ */
-
-.scan-frame {
-  position: absolute;
-
-  top: 8%;
-  left: 25%;
-
-  width: 50%;
-  height: 84%;
-
-  pointer-events: none;
-}
-
-.corner {
-  position: absolute;
-
-  width: 40px;
-  height: 40px;
-
-  border-color: #22c55e;
-  border-style: solid;
-}
-
-.corner.top-left {
-  top: 0;
-  left: 0;
-  border-width: 3px 0 0 3px;
-}
-
-.corner.top-right {
-  top: 0;
-  right: 0;
-  border-width: 3px 3px 0 0;
-}
-
-.corner.bottom-left {
-  bottom: 0;
-  left: 0;
-  border-width: 0 0 3px 3px;
-}
-
-.corner.bottom-right {
-  right: 0;
-  bottom: 0;
-  border-width: 0 3px 3px 0;
-}
-
-/* ============================================================
-   PROCESSING
-============================================================ */
-
-.processing-overlay {
-  position: absolute;
-
-  left: 50%;
-  bottom: 18px;
-
-  transform: translateX(-50%);
-
-  display: flex;
-  align-items: center;
-  gap: 9px;
-
-  padding: 9px 14px;
-
-  background: rgba(0, 0, 0, 0.7);
-  color: #ffffff;
-
-  border-radius: 999px;
-
-  font-size: 12px;
-  font-weight: 600;
-}
-
+.loading-spinner,
 .processing-spinner {
-  width: 14px;
-  height: 14px;
+  width: 27px;
+  height: 27px;
 
-  border: 2px solid rgba(255, 255, 255, 0.35);
-  border-top-color: #ffffff;
+  border: 3px solid #dbeafe;
+  border-top-color: #2563eb;
 
   border-radius: 50%;
 
@@ -544,50 +445,323 @@ button:disabled {
   }
 }
 
+
+/* ============================================================
+   CAMERA CARD
+============================================================ */
+
+.camera-card {
+  width: 100%;
+
+  margin-bottom: 30px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 16px;
+
+  overflow: hidden;
+
+  box-shadow:
+    0 10px 30px rgba(15, 23, 42, 0.06);
+}
+
+.camera-header {
+  min-height: 75px;
+
+  padding: 17px 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 20px;
+
+  border-bottom: 1px solid #e8edf3;
+}
+
+.camera-header h3 {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.camera-header p {
+  margin-top: 4px;
+
+  color: #64748b;
+
+  font-size: 13px;
+}
+
+
+/* ============================================================
+   CAMERA INDICATOR
+============================================================ */
+
+.camera-indicator {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 7px 11px;
+
+  border-radius: 999px;
+
+  color: #64748b;
+
+  background: #f8fafc;
+
+  border: 1px solid #e2e8f0;
+
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.camera-indicator span {
+  width: 8px;
+  height: 8px;
+
+  border-radius: 50%;
+
+  background: #94a3b8;
+}
+
+.camera-indicator.active {
+  color: #15803d;
+
+  background: #f0fdf4;
+
+  border-color: #bbf7d0;
+}
+
+.camera-indicator.active span {
+  background: #22c55e;
+
+  box-shadow:
+    0 0 0 4px rgba(34, 197, 94, 0.12);
+
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.45;
+  }
+}
+
+
+/* ============================================================
+   CAMERA CONTAINER
+============================================================ */
+
+.camera-container {
+  width: 100%;
+
+  min-height: 500px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background: #0f172a;
+}
+
+
+/* ============================================================
+   VIDEO WRAPPER
+   IMPORTANT FOR FACE BOX ALIGNMENT
+============================================================ */
+
+.video-wrapper {
+  position: relative;
+
+  width: 100%;
+  max-width: 1280px;
+
+  margin: 0 auto;
+
+  overflow: hidden;
+
+  background: #000000;
+
+  border-radius: 12px;
+
+  line-height: 0;
+
+  box-shadow:
+    0 12px 35px rgba(0, 0, 0, 0.25);
+}
+
+
+/* ============================================================
+   WEBCAM
+============================================================ */
+
+.webcam {
+  display: block;
+
+  width: 100%;
+  height: auto;
+
+  max-width: 100%;
+
+  object-fit: cover;
+
+  background: #000000;
+}
+
+
+/* ============================================================
+   DETECTION CANVAS
+   MUST OVERLAY THE VIDEO
+============================================================ */
+
+.detection-canvas {
+  position: absolute;
+
+  top: 0;
+  left: 0;
+
+  width: 100%;
+  height: 100%;
+
+  display: block;
+
+  pointer-events: none;
+
+  z-index: 10;
+}
+
+
+/* ============================================================
+   SCAN FRAME
+============================================================ */
+
+.video-wrapper::after {
+  content: "";
+
+  position: absolute;
+
+  top: 8%;
+  left: 12%;
+
+  width: 76%;
+  height: 84%;
+
+  border: 1px solid rgba(255, 255, 255, 0.16);
+
+  border-radius: 15px;
+
+  pointer-events: none;
+
+  z-index: 4;
+}
+
+
+/* ============================================================
+   PROCESSING OVERLAY
+============================================================ */
+
+.processing-overlay {
+  position: absolute;
+
+  left: 50%;
+  top: 50%;
+
+  transform: translate(-50%, -50%);
+
+  z-index: 20;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 11px 16px;
+
+  color: #ffffff;
+
+  background: rgba(15, 23, 42, 0.82);
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+
+  border-radius: 999px;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  backdrop-filter: blur(8px);
+}
+
+.processing-overlay.small {
+  top: auto;
+  bottom: 18px;
+
+  transform: translateX(-50%);
+
+  padding: 8px 12px;
+
+  font-size: 12px;
+}
+
+.processing-overlay .processing-spinner {
+  width: 18px;
+  height: 18px;
+
+  border-width: 2px;
+
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+}
+
+
 /* ============================================================
    CAMERA PLACEHOLDER
 ============================================================ */
 
 .camera-placeholder {
   width: 100%;
-  min-height: 560px;
+  min-height: 460px;
 
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
 
+  text-align: center;
+
   color: #cbd5e1;
 }
 
-.placeholder-icon {
-  width: 95px;
-  height: 95px;
+.camera-placeholder svg {
+  margin-bottom: 18px;
 
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  background: #172033;
-
-  border-radius: 50%;
-
-  margin-bottom: 20px;
+  opacity: 0.8;
 }
 
 .camera-placeholder h3 {
-  margin: 0 0 8px;
+  margin-bottom: 7px;
 
   color: #ffffff;
+
   font-size: 20px;
 }
 
 .camera-placeholder p {
-  margin: 0;
-
   color: #94a3b8;
+
   font-size: 14px;
 }
+
 
 /* ============================================================
    SECTION HEADING
@@ -604,71 +778,119 @@ button:disabled {
 }
 
 .section-heading h3 {
-  margin: 0;
-  font-size: 19px;
+  font-size: 20px;
+  font-weight: 750;
 }
 
 .section-heading p {
-  margin: 5px 0 0;
+  margin-top: 5px;
 
   color: #64748b;
+
   font-size: 13px;
 }
 
-.detection-status,
-.health-disclaimer {
-  display: flex;
+
+/* ============================================================
+   DETECTIONS PANEL
+============================================================ */
+
+.detections-panel {
+  margin-bottom: 30px;
+
+  padding: 23px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 15px;
+
+  box-shadow:
+    0 7px 24px rgba(15, 23, 42, 0.05);
+}
+
+.detection-status {
+  display: inline-flex;
   align-items: center;
+
   gap: 7px;
 
-  padding: 7px 11px;
+  padding: 8px 11px;
 
-  background: #eff6ff;
-  color: #2563eb;
+  color: #15803d;
+
+  background: #f0fdf4;
+
+  border: 1px solid #bbf7d0;
 
   border-radius: 999px;
 
   font-size: 12px;
-  font-weight: 700;
+  font-weight: 650;
 }
+
 
 /* ============================================================
-   DETECTIONS
+   DETECTION GRID
 ============================================================ */
-
-.detections-panel {
-  margin-bottom: 28px;
-}
 
 .detections-grid {
   display: grid;
 
   grid-template-columns:
-    repeat(auto-fit, minmax(280px, 1fr));
+    repeat(auto-fit, minmax(270px, 1fr));
 
-  gap: 15px;
+  gap: 16px;
 }
+
+
+/* ============================================================
+   DETECTION CARD
+============================================================ */
 
 .detection-card {
-  background: #ffffff;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-
   padding: 18px;
 
-  box-shadow:
-    0 4px 15px rgba(15, 23, 42, 0.04);
+  background:
+    linear-gradient(
+      135deg,
+      #ffffff,
+      #f8fbff
+    );
+
+  border: 1px solid #dce5ef;
+
+  border-radius: 13px;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
+
+.detection-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 22px rgba(15, 23, 42, 0.07);
+}
+
+
+/* ============================================================
+   FACE CARD HEADER
+============================================================ */
 
 .face-card-header {
   display: flex;
   align-items: center;
+
   gap: 11px;
 
-  padding-bottom: 14px;
+  padding-bottom: 15px;
 
-  border-bottom: 1px solid #edf0f4;
+  margin-bottom: 15px;
+
+  border-bottom: 1px solid #e8edf3;
 }
 
 .face-icon {
@@ -679,15 +901,14 @@ button:disabled {
   align-items: center;
   justify-content: center;
 
-  background: #eff6ff;
   color: #2563eb;
+
+  background: #eff6ff;
 
   border-radius: 10px;
 }
 
 .face-card-header h4 {
-  margin: 0;
-
   font-size: 15px;
 }
 
@@ -696,266 +917,236 @@ button:disabled {
 
   margin-top: 3px;
 
-  color: #22c55e;
+  color: #16a34a;
+
   font-size: 12px;
-  font-weight: 600;
 }
 
+
+/* ============================================================
+   DETECTION INFO
+============================================================ */
+
 .detection-info {
-  padding-top: 8px;
+  display: flex;
+  flex-direction: column;
+
+  gap: 11px;
 }
 
 .info-item {
   display: flex;
+  align-items: center;
   justify-content: space-between;
 
-  padding: 8px 0;
-
-  border-bottom: 1px solid #f1f5f9;
+  gap: 15px;
 }
 
-.info-item:last-child {
-  border-bottom: 0;
-}
-
-.label {
+.info-item .label {
   color: #64748b;
+
   font-size: 13px;
 }
 
-.value {
+.info-item .value {
   color: #172033;
-  font-size: 13px;
+
+  font-size: 14px;
   font-weight: 700;
+
+  text-align: right;
 }
+
 
 /* ============================================================
-   CAPTURED SECTION
+   CAPTURED IMAGE
 ============================================================ */
 
 .captured-section {
   margin-bottom: 30px;
 
-  padding: 20px;
+  padding: 23px;
 
   background: #ffffff;
 
-  border: 1px solid #e1e7ef;
+  border: 1px solid #e2e8f0;
+
   border-radius: 15px;
+
+  box-shadow:
+    0 7px 24px rgba(15, 23, 42, 0.05);
+}
+
+.captured-section h3 {
+  margin-bottom: 17px;
+
+  font-size: 20px;
 }
 
 .captured-content {
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 
-  grid-template-columns:
-    minmax(300px, 1.2fr)
-    minmax(280px, 0.8fr);
-
-  gap: 25px;
-}
-
-.captured-image-wrapper {
-  overflow: hidden;
-
-  background: #000;
-
-  border-radius: 12px;
+  gap: 16px;
 }
 
 .captured-image {
-  width: 100%;
-
   display: block;
 
+  width: min(100%, 900px);
+
+  height: auto;
+
   border-radius: 12px;
+
+  border: 1px solid #dce3eb;
+
+  background: #000000;
+
+  box-shadow:
+    0 8px 25px rgba(15, 23, 42, 0.12);
 }
 
-.captured-results {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.captured-results h4 {
-  margin: 0;
-  font-size: 16px;
-}
-
-.captured-results > p {
-  color: #64748b;
-  font-size: 13px;
-}
-
-.captured-result-card {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-
-  padding: 14px;
-
-  background: #f8fafc;
-
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-
-  font-size: 13px;
-}
 
 /* ============================================================
-   HEALTH
+   HEALTH SECTION
 ============================================================ */
 
 .health-section {
-  margin-bottom: 25px;
+  margin-bottom: 30px;
+
+  padding: 23px;
+
+  background: #ffffff;
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 15px;
+
+  box-shadow:
+    0 7px 24px rgba(15, 23, 42, 0.05);
 }
 
 .health-grid {
   display: grid;
 
   grid-template-columns:
-    repeat(3, minmax(0, 1fr));
+    repeat(3, 1fr);
 
   gap: 16px;
 }
 
-.health-card {
-  background: #ffffff;
 
-  border: 1px solid #e1e7ef;
-  border-radius: 14px;
+/* ============================================================
+   HEALTH CARD
+============================================================ */
+
+.health-card {
+  position: relative;
+
+  min-height: 230px;
 
   padding: 20px;
 
-  box-shadow:
-    0 5px 20px rgba(15, 23, 42, 0.04);
+  background:
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f8fafc
+    );
+
+  border: 1px solid #e2e8f0;
+
+  border-radius: 13px;
+
+  overflow: hidden;
 }
 
-.health-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  gap: 10px;
-}
-
-.health-icon {
-  width: 48px;
-  height: 48px;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  background: #eff6ff;
+.health-card > svg {
   color: #2563eb;
 
-  border-radius: 12px;
+  margin-bottom: 13px;
 }
 
-.health-status {
-  color: #64748b;
-  font-size: 11px;
-  font-weight: 700;
+.health-card h3 {
+  margin-bottom: 10px;
 
-  text-align: right;
-}
-
-.health-card-title {
-  margin-top: 18px;
-
-  color: #475569;
-
-  font-size: 14px;
-  font-weight: 650;
+  font-size: 17px;
 }
 
 .health-value {
   display: flex;
   align-items: baseline;
+
   gap: 6px;
 
-  margin-top: 3px;
-
-  color: #111827;
+  margin-bottom: 12px;
 
   font-size: 38px;
-  font-weight: 800;
+  line-height: 1;
+
+  font-weight: 750;
+
+  color: #172033;
 }
 
 .health-value small {
-  color: #64748b;
-
   font-size: 14px;
+
   font-weight: 600;
+
+  color: #64748b;
 }
 
-.health-description {
-  min-height: 40px;
-
-  margin: 12px 0;
+.health-card p {
+  max-width: 360px;
 
   color: #64748b;
 
-  font-size: 12px;
-  line-height: 1.6;
+  font-size: 13px;
+
+  line-height: 1.55;
 }
 
-.measurement-message {
-  display: flex;
-  align-items: center;
-  gap: 6px;
 
-  padding: 8px 10px;
-
-  background: #f8fafc;
-
-  border-radius: 8px;
-
-  color: #64748b;
-
-  font-size: 11px;
-  font-weight: 600;
-}
+/* ============================================================
+   BLOOD PRESSURE
+============================================================ */
 
 .bp-values {
   display: flex;
-  align-items: center;
-  gap: 9px;
+  align-items: baseline;
 
-  margin-top: 10px;
-}
+  gap: 7px;
 
-.bp-values > div:not(.bp-slash):not(.bp-unit) {
-  display: flex;
-  flex-direction: column;
+  margin-bottom: 13px;
 }
 
 .bp-values strong {
-  font-size: 32px;
+  font-size: 38px;
   line-height: 1;
+
+  font-weight: 750;
+
+  color: #172033;
 }
 
 .bp-values span {
-  margin-top: 4px;
-
-  color: #64748b;
-
-  font-size: 9px;
-  font-weight: 700;
-}
-
-.bp-slash {
   color: #94a3b8;
+
   font-size: 28px;
 }
 
-.bp-unit {
-  margin-left: auto;
+.bp-values small {
+  margin-left: 3px;
 
   color: #64748b;
 
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 600;
 }
+
 
 /* ============================================================
    MEDICAL NOTICE
@@ -964,20 +1155,25 @@ button:disabled {
 .medical-notice {
   display: flex;
   align-items: flex-start;
+
   gap: 12px;
 
-  padding: 16px;
+  padding: 17px 19px;
 
-  background: #f8fafc;
+  margin-bottom: 10px;
 
-  border: 1px solid #dce3ec;
-  border-radius: 11px;
+  background: #eff6ff;
 
-  color: #475569;
+  border: 1px solid #bfdbfe;
+
+  border-radius: 13px;
+
+  color: #1e40af;
 }
 
 .medical-notice > svg {
   flex-shrink: 0;
+
   margin-top: 2px;
 }
 
@@ -986,111 +1182,109 @@ button:disabled {
 
   margin-bottom: 5px;
 
-  color: #334155;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .medical-notice p {
-  margin: 0;
+  color: #475569;
 
-  font-size: 12px;
+  font-size: 13px;
+
   line-height: 1.6;
 }
+
 
 /* ============================================================
    FOOTER
 ============================================================ */
 
 .footer {
+  width: 100%;
+
+  padding: 24px 20px;
+
   background: #ffffff;
 
-  border-top: 1px solid #e5eaf1;
+  border-top: 1px solid #e2e8f0;
 }
 
-.footer-content {
-  max-width: 1400px;
-
-  margin: 0 auto;
-
-  padding: 22px 28px;
-
+.footer {
   display: flex;
   align-items: center;
+  justify-content: center;
+
   gap: 12px;
 }
 
 .footer-logo {
-  width: 45px;
-  height: 45px;
+  width: 42px;
+  height: 42px;
 
   object-fit: contain;
 }
 
-.footer-content strong {
+.footer p {
+  color: #64748b;
+
   font-size: 13px;
 }
 
-.footer-content p {
-  margin: 3px 0 0;
-
-  color: #94a3b8;
-
-  font-size: 11px;
-}
 
 /* ============================================================
-   RESPONSIVE
+   TABLET
 ============================================================ */
 
 @media (max-width: 900px) {
-  .header-content {
-    align-items: flex-start;
-  }
 
-  .brand-text p {
-    display: none;
+  .health-grid {
+    grid-template-columns: 1fr;
   }
 
   .camera-container {
     min-height: 400px;
   }
 
-  .webcam {
-    min-height: 400px;
-  }
-
   .camera-placeholder {
-    min-height: 400px;
+    min-height: 360px;
   }
 
-  .health-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .captured-content {
-    grid-template-columns: 1fr;
-  }
 }
 
-@media (max-width: 650px) {
-  .header-content {
-    padding: 12px 15px;
-  }
 
-  .brand-text h1 {
-    font-size: 16px;
+/* ============================================================
+   MOBILE
+============================================================ */
+
+@media (max-width: 700px) {
+
+  .header-content {
+    width: min(100% - 24px, 1400px);
+
+    min-height: auto;
+
+    padding: 14px 0;
+
+    flex-direction: column;
+
+    align-items: flex-start;
   }
 
   .model-status {
-    padding: 7px;
+    align-self: flex-start;
   }
 
-  .model-status span {
-    display: none;
+  .brand-text h1 {
+    font-size: 19px;
+  }
+
+  .brand-text p {
+    font-size: 12px;
   }
 
   .main {
-    padding: 25px 15px 40px;
+    width: min(100% - 24px, 1400px);
+
+    padding-top: 25px;
   }
 
   .page-title h2 {
@@ -1098,47 +1292,135 @@ button:disabled {
   }
 
   .controls {
+    width: 100%;
+  }
+
+  .control-btn {
+    flex: 1;
+
+    min-width: 130px;
+  }
+
+  .camera-header {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .camera-indicator {
+    align-self: flex-start;
+  }
+
+  .camera-container {
+    padding: 10px;
+
+    min-height: 280px;
+  }
+
+  .video-wrapper {
+    border-radius: 9px;
+  }
+
+  .camera-placeholder {
+    min-height: 270px;
+  }
+
+  .detections-panel,
+  .captured-section,
+  .health-section {
+    padding: 17px;
+  }
+
+  .section-heading {
+    align-items: flex-start;
+
+    flex-direction: column;
+  }
+
+  .detection-status {
+    align-self: flex-start;
+  }
+
+  .detections-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .health-card {
+    min-height: 210px;
+  }
+
+  .medical-notice {
+    padding: 14px;
+  }
+
+}
+
+
+/* ============================================================
+   SMALL MOBILE
+============================================================ */
+
+@media (max-width: 430px) {
+
+  .brand {
+    align-items: flex-start;
+  }
+
+  .logo-container {
+    width: 48px;
+    height: 48px;
+  }
+
+  .brand-text h1 {
+    font-size: 17px;
+  }
+
+  .brand-text p {
+    font-size: 11px;
+  }
+
+  .controls {
     display: grid;
 
-    grid-template-columns:
-      repeat(2, 1fr);
+    grid-template-columns: 1fr 1fr;
   }
 
   .control-btn {
     width: 100%;
+
+    min-width: 0;
+
+    padding-left: 10px;
+    padding-right: 10px;
+
+    font-size: 12px;
   }
 
-  .camera-header,
-  .section-heading {
-    align-items: flex-start;
-  }
-
-  .camera-header {
-    flex-direction: column;
-  }
-
-  .section-heading {
-    flex-direction: column;
+  .controls > .control-btn:first-child {
+    grid-column: 1 / -1;
   }
 
   .camera-container {
-    min-height: 300px;
-  }
-
-  .webcam {
-    min-height: 300px;
+    padding: 5px;
   }
 
   .camera-placeholder {
-    min-height: 300px;
+    min-height: 230px;
   }
 
-  .scan-frame {
-    left: 15%;
-    width: 70%;
+  .health-value,
+  .bp-values strong {
+    font-size: 32px;
   }
 
-  .footer-content {
-    padding: 18px 15px;
+  .footer {
+    flex-direction: column;
+
+    text-align: center;
   }
+
 }
