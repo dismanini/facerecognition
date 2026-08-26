@@ -19,7 +19,6 @@ body {
     "Segoe UI",
     Arial,
     sans-serif;
-
   background: #f5f7fb;
   color: #111827;
 }
@@ -28,7 +27,6 @@ button,
 input {
   font-family: inherit;
 }
-
 
 /* ============================================================
    APP
@@ -43,7 +41,6 @@ input {
       #f5f7fb 100%
     );
 }
-
 
 /* ============================================================
    HEADER
@@ -60,17 +57,13 @@ input {
 .header-content {
   max-width: 1250px;
   min-height: 82px;
-
   margin: 0 auto;
   padding: 12px 24px;
-
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   gap: 20px;
 }
-
 
 /* ============================================================
    BRAND
@@ -83,43 +76,33 @@ input {
 }
 
 .logo-container {
-  /* width: 62px; */
   height: 62px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   background: #ffffff;
   border-radius: 12px;
-
   overflow: hidden;
 }
 
 .logo {
   width: 100%;
   height: 100%;
-
   object-fit: contain;
 }
 
 .brand-text h1 {
   margin: 0;
-
   font-size: 23px;
   font-weight: 750;
-
   color: #111827;
 }
 
 .brand-text p {
   margin: 4px 0 0;
-
   font-size: 13px;
-
   color: #6b7280;
 }
-
 
 /* ============================================================
    MODEL STATUS
@@ -129,14 +112,10 @@ input {
   display: flex;
   align-items: center;
   gap: 7px;
-
   padding: 8px 13px;
-
   border-radius: 999px;
-
   font-size: 13px;
   font-weight: 600;
-
   white-space: nowrap;
 }
 
@@ -150,19 +129,15 @@ input {
   color: #c2410c;
 }
 
-
 /* ============================================================
    MAIN
 ============================================================ */
 
 .main {
   width: min(1250px, calc(100% - 40px));
-
   margin: 0 auto;
-
   padding: 35px 0 60px;
 }
-
 
 /* ============================================================
    PAGE TITLE
@@ -174,21 +149,16 @@ input {
 
 .page-title h2 {
   margin: 0;
-
   font-size: 30px;
   font-weight: 750;
-
   color: #111827;
 }
 
 .page-title p {
   margin: 7px 0 0;
-
   color: #6b7280;
-
   font-size: 15px;
 }
-
 
 /* ============================================================
    CONTROLS
@@ -204,35 +174,26 @@ input {
   gap: 10px;
 }
 
-
 /* ============================================================
    BUTTONS
 ============================================================ */
 
 .control-btn {
   min-height: 44px;
-
   display: inline-flex;
   align-items: center;
   justify-content: center;
-
   gap: 8px;
-
   padding: 0 18px;
-
   border: 0;
   border-radius: 9px;
-
   font-size: 14px;
   font-weight: 650;
-
   cursor: pointer;
-
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease,
     background 0.15s ease;
-
   white-space: nowrap;
 }
 
@@ -269,7 +230,6 @@ input {
 .control-btn.secondary {
   background: #ffffff;
   color: #374151;
-
   border: 1px solid #d1d5db;
 }
 
@@ -277,21 +237,16 @@ input {
   background: #f9fafb;
 }
 
-
 /* ============================================================
    SETTINGS
 ============================================================ */
 
 .settings-panel {
   margin-top: 15px;
-
   padding: 20px;
-
   background: #ffffff;
-
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-
   box-shadow:
     0 5px 20px
     rgba(0, 0, 0, 0.04);
@@ -305,7 +260,6 @@ input {
 
 .settings-title h3 {
   margin: 0;
-
   font-size: 15px;
 }
 
@@ -318,9 +272,7 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   margin-bottom: 10px;
-
   font-size: 14px;
 }
 
@@ -330,21 +282,16 @@ input {
 
 .setting-item input[type="range"] {
   width: 100%;
-
   cursor: pointer;
 }
 
 .range-labels {
   display: flex;
   justify-content: space-between;
-
   margin-top: 5px;
-
   font-size: 11px;
-
   color: #9ca3af;
 }
-
 
 /* ============================================================
    ERROR
@@ -354,17 +301,11 @@ input {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-
   margin-bottom: 20px;
-
   padding: 15px 17px;
-
   background: #fef2f2;
-
   border: 1px solid #fecaca;
-
   border-radius: 10px;
-
   color: #991b1b;
 }
 
@@ -375,10 +316,8 @@ input {
 
 .error-message p {
   margin: 0;
-
   font-size: 13px;
 }
-
 
 /* ============================================================
    LOADING
@@ -386,17 +325,12 @@ input {
 
 .loading {
   min-height: 180px;
-
   margin-bottom: 20px;
-
   display: flex;
   flex-direction: column;
-
   align-items: center;
   justify-content: center;
-
   background: #ffffff;
-
   border: 1px solid #e5e7eb;
   border-radius: 15px;
 }
@@ -404,26 +338,20 @@ input {
 .loading-spinner {
   width: 38px;
   height: 38px;
-
   border: 3px solid #e5e7eb;
   border-top-color: #111827;
-
   border-radius: 50%;
-
   animation: spin 0.8s linear infinite;
 }
 
 .loading h3 {
   margin: 15px 0 5px;
-
   font-size: 16px;
 }
 
 .loading p {
   margin: 0;
-
   font-size: 13px;
-
   color: #6b7280;
 }
 
@@ -433,24 +361,18 @@ input {
   }
 }
 
-
 /* ============================================================
    CAMERA CARD
 ============================================================ */
 
 .camera-card {
   background: #ffffff;
-
   border: 1px solid #e5e7eb;
-
   border-radius: 16px;
-
   padding: 20px;
-
   box-shadow:
     0 8px 25px
     rgba(0, 0, 0, 0.04);
-
   margin-bottom: 22px;
 }
 
@@ -458,26 +380,20 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   gap: 20px;
-
   margin-bottom: 18px;
 }
 
 .camera-header h3 {
   margin: 0;
-
   font-size: 18px;
 }
 
 .camera-header p {
   margin: 4px 0 0;
-
   font-size: 13px;
-
   color: #6b7280;
 }
-
 
 /* ============================================================
    CAMERA INDICATOR
@@ -487,15 +403,10 @@ input {
   display: flex;
   align-items: center;
   gap: 7px;
-
   padding: 7px 11px;
-
   border-radius: 999px;
-
   background: #f3f4f6;
-
   color: #6b7280;
-
   font-size: 12px;
   font-weight: 600;
 }
@@ -503,9 +414,7 @@ input {
 .camera-indicator span {
   width: 7px;
   height: 7px;
-
   border-radius: 50%;
-
   background: #9ca3af;
 }
 
@@ -516,12 +425,10 @@ input {
 
 .camera-indicator.active span {
   background: #22c55e;
-
   box-shadow:
     0 0 0 4px
     rgba(34, 197, 94, 0.12);
 }
-
 
 /* ============================================================
    CAMERA CONTAINER
@@ -529,48 +436,35 @@ input {
 
 .camera-container {
   width: 100%;
-
   aspect-ratio: 16 / 9;
-
   background: #0f172a;
-
   border-radius: 12px;
-
   overflow: hidden;
-
   position: relative;
 }
 
 .video-wrapper {
   width: 100%;
   height: 100%;
-
   position: relative;
-
   overflow: hidden;
 }
 
 .webcam {
   width: 100%;
   height: 100%;
-
   display: block;
-
   object-fit: cover;
 }
 
 .detection-canvas {
   position: absolute;
-
   top: 0;
   left: 0;
-
   width: 100%;
   height: 100%;
-
   pointer-events: none;
 }
-
 
 /* ============================================================
    SCAN FRAME
@@ -578,76 +472,51 @@ input {
 
 .scan-frame {
   position: absolute;
-
   left: 25%;
   top: 8%;
-
   width: 50%;
   height: 84%;
-
   border: 1px solid
     rgba(255, 255, 255, 0.25);
-
   border-radius: 45%;
-
   pointer-events: none;
 }
 
 .corner {
   position: absolute;
-
   width: 28px;
   height: 28px;
-
   border-color: #22c55e;
-
   border-style: solid;
 }
 
 .corner.top-left {
   top: -2px;
   left: -2px;
-
-  border-width:
-    3px 0 0 3px;
-
-  border-radius:
-    8px 0 0 0;
+  border-width: 3px 0 0 3px;
+  border-radius: 8px 0 0 0;
 }
 
 .corner.top-right {
   top: -2px;
   right: -2px;
-
-  border-width:
-    3px 3px 0 0;
-
-  border-radius:
-    0 8px 0 0;
+  border-width: 3px 3px 0 0;
+  border-radius: 0 8px 0 0;
 }
 
 .corner.bottom-left {
   bottom: -2px;
   left: -2px;
-
-  border-width:
-    0 0 3px 3px;
-
-  border-radius:
-    0 0 0 8px;
+  border-width: 0 0 3px 3px;
+  border-radius: 0 0 0 8px;
 }
 
 .corner.bottom-right {
   bottom: -2px;
   right: -2px;
-
-  border-width:
-    0 3px 3px 0;
-
-  border-radius:
-    0 0 8px 0;
+  border-width: 0 3px 3px 0;
+  border-radius: 0 0 8px 0;
 }
-
 
 /* ============================================================
    PROCESSING
@@ -655,40 +524,28 @@ input {
 
 .processing-overlay {
   position: absolute;
-
   top: 15px;
   right: 15px;
-
   display: flex;
   align-items: center;
   gap: 8px;
-
   padding: 8px 12px;
-
   background:
     rgba(15, 23, 42, 0.8);
-
   color: #ffffff;
-
   border-radius: 8px;
-
   font-size: 12px;
 }
 
 .processing-spinner {
   width: 14px;
   height: 14px;
-
   border: 2px solid
     rgba(255, 255, 255, 0.3);
-
   border-top-color: #ffffff;
-
   border-radius: 50%;
-
   animation: spin 0.7s linear infinite;
 }
-
 
 /* ============================================================
    CAMERA PLACEHOLDER
@@ -697,47 +554,201 @@ input {
 .camera-placeholder {
   width: 100%;
   height: 100%;
-
   display: flex;
   flex-direction: column;
-
   align-items: center;
   justify-content: center;
-
   text-align: center;
-
   color: #94a3b8;
 }
 
 .placeholder-icon {
   width: 90px;
   height: 90px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   margin-bottom: 15px;
-
   border-radius: 50%;
-
   background: #1e293b;
 }
 
 .camera-placeholder h3 {
   margin: 0 0 7px;
-
   color: #e2e8f0;
-
   font-size: 18px;
 }
 
 .camera-placeholder p {
   margin: 0;
-
   font-size: 13px;
 }
 
+/* ============================================================
+   HEALTH SECTION
+============================================================ */
+
+.health-section {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 22px;
+  box-shadow:
+    0 8px 25px
+    rgba(0, 0, 0, 0.04);
+}
+
+.health-disclaimer {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: #f0fdf4;
+  color: #15803d;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.health-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.health-card {
+  padding: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  background: #f8fafc;
+  min-height: 250px;
+}
+
+.health-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.health-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.heart-card .health-icon {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.spo2-card .health-icon {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.bp-card .health-icon {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.health-status {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: right;
+}
+
+.health-card-title {
+  margin-top: 18px;
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.health-value {
+  margin-top: 5px;
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+  font-size: 42px;
+  line-height: 1;
+  font-weight: 750;
+  color: #111827;
+}
+
+.health-value small {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.health-description {
+  min-height: 40px;
+  margin: 15px 0 12px;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.measurement-message {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ============================================================
+   BLOOD PRESSURE
+============================================================ */
+
+.bp-values {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bp-values > div:not(.bp-slash):not(.bp-unit) {
+  display: flex;
+  flex-direction: column;
+}
+
+.bp-values strong {
+  font-size: 34px;
+  line-height: 1;
+  color: #111827;
+}
+
+.bp-values span {
+  margin-top: 5px;
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 700;
+}
+
+.bp-slash {
+  font-size: 28px;
+  color: #9ca3af;
+}
+
+.bp-unit {
+  align-self: flex-end;
+  margin-bottom: 3px;
+  font-size: 11px;
+  color: #6b7280;
+}
 
 /* ============================================================
    DETECTION PANEL
@@ -746,15 +757,10 @@ input {
 .detections-panel,
 .captured-section {
   background: #ffffff;
-
   border: 1px solid #e5e7eb;
-
   border-radius: 16px;
-
   padding: 22px;
-
   margin-bottom: 22px;
-
   box-shadow:
     0 8px 25px
     rgba(0, 0, 0, 0.04);
@@ -764,23 +770,18 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   gap: 20px;
-
   margin-bottom: 18px;
 }
 
 .section-heading h3 {
   margin: 0;
-
   font-size: 18px;
 }
 
 .section-heading p {
   margin: 4px 0 0;
-
   font-size: 13px;
-
   color: #6b7280;
 }
 
@@ -788,19 +789,13 @@ input {
   display: flex;
   align-items: center;
   gap: 7px;
-
   padding: 7px 11px;
-
   border-radius: 999px;
-
   background: #ecfdf5;
-
   color: #047857;
-
   font-size: 12px;
   font-weight: 600;
 }
-
 
 /* ============================================================
    DETECTION GRID
@@ -808,34 +803,26 @@ input {
 
 .detections-grid {
   display: grid;
-
   grid-template-columns:
     repeat(
       auto-fit,
       minmax(260px, 1fr)
     );
-
   gap: 15px;
 }
 
 .detection-card {
   padding: 18px;
-
   background: #f8fafc;
-
   border: 1px solid #e5e7eb;
-
   border-radius: 12px;
 }
 
 .face-card-header {
   display: flex;
   align-items: center;
-
   gap: 11px;
-
   padding-bottom: 14px;
-
   border-bottom:
     1px solid #e5e7eb;
 }
@@ -843,27 +830,21 @@ input {
 .face-icon {
   width: 42px;
   height: 42px;
-
   display: flex;
   align-items: center;
   justify-content: center;
-
   background: #ecfdf5;
-
   color: #059669;
-
   border-radius: 10px;
 }
 
 .face-card-header h4 {
   margin: 0;
-
   font-size: 15px;
 }
 
 .face-card-header span {
   font-size: 12px;
-
   color: #059669;
 }
 
@@ -875,11 +856,8 @@ input {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
   gap: 15px;
-
   padding: 9px 0;
-
   border-bottom:
     1px solid #e5e7eb;
 }
@@ -890,19 +868,15 @@ input {
 
 .info-item .label {
   color: #6b7280;
-
   font-size: 12px;
 }
 
 .info-item .value {
   color: #111827;
-
   font-size: 13px;
   font-weight: 650;
-
   text-align: right;
 }
-
 
 /* ============================================================
    CAPTURED IMAGE
@@ -911,22 +885,49 @@ input {
 .captured-content {
   display: flex;
   flex-direction: column;
-
   align-items: flex-start;
-
   gap: 15px;
 }
 
 .captured-image {
   width: min(600px, 100%);
-
   border-radius: 12px;
-
   display: block;
-
   border: 1px solid #e5e7eb;
 }
 
+/* ============================================================
+   MEDICAL NOTICE
+============================================================ */
+
+.medical-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px;
+  margin-bottom: 22px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  color: #92400e;
+}
+
+.medical-notice svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.medical-notice strong {
+  display: block;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+
+.medical-notice p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
 
 /* ============================================================
    FOOTER
@@ -934,66 +935,61 @@ input {
 
 .footer {
   background: #111827;
-
   color: #ffffff;
-
   padding: 25px 20px;
 }
 
 .footer-content {
   max-width: 1250px;
-
   margin: 0 auto;
-
   display: flex;
   align-items: center;
-
   gap: 12px;
 }
 
 .footer-logo {
-  /* width: 45px; */
   height: 45px;
-
   object-fit: contain;
-
   background: #ffffff;
-
   border-radius: 8px;
 }
 
 .footer-content strong {
   display: block;
-
   font-size: 14px;
 }
 
 .footer-content p {
   margin: 3px 0 0;
-
   font-size: 12px;
-
   color: #9ca3af;
 }
-
 
 /* ============================================================
    RESPONSIVE
 ============================================================ */
 
+@media (max-width: 900px) {
+
+  .health-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .health-card {
+    min-height: auto;
+  }
+}
+
 @media (max-width: 800px) {
 
   .header-content {
     min-height: auto;
-
     padding: 12px 18px;
-
     align-items: flex-start;
   }
 
   .model-status {
     font-size: 11px;
-
     padding: 7px 9px;
   }
 
@@ -1006,7 +1002,6 @@ input {
   }
 
   .logo-container {
-    /* width: 50px; */
     height: 50px;
   }
 
@@ -1025,7 +1020,6 @@ input {
 
   .controls {
     display: grid;
-
     grid-template-columns:
       repeat(2, 1fr);
   }
@@ -1035,6 +1029,7 @@ input {
   }
 
   .camera-card,
+  .health-section,
   .detections-panel,
   .captured-section {
     padding: 15px;
@@ -1048,8 +1043,11 @@ input {
     left: 20%;
     width: 60%;
   }
-}
 
+  .health-grid {
+    grid-template-columns: 1fr;
+  }
+}
 
 @media (max-width: 550px) {
 
@@ -1086,11 +1084,16 @@ input {
     align-items: flex-start;
   }
 
-  .detection-status {
+  .detection-status,
+  .health-disclaimer {
     align-self: flex-start;
   }
 
   .footer-content {
     align-items: flex-start;
+  }
+
+  .health-value {
+    font-size: 36px;
   }
 }

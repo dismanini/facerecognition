@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import Webcam from 'react-webcam'
 import * as faceapi from 'face-api.js'
 
@@ -12,13 +12,16 @@ import {
   UserRound,
   Activity,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  HeartPulse,
+  Droplets,
+  Stethoscope,
+  ShieldCheck,
+  Info
 } from 'lucide-react'
 
 import logo from './assets/etouchus_face_recognition_logo.png'
-
 import './App.css'
-
 
 function App() {
   // ============================================================
@@ -34,9 +37,29 @@ function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [confidence, setConfidence] = useState(0.5)
 
+  // Health measurements
+  const [heartRate, setHeartRate] = useState(null)
+  const [spo2, setSpo2] = useState(null)
+  const [bloodPressure, setBloodPressure] = useState({
+    systolic: null,
+    diastolic: null
+  })
+
+  const [heartRateStatus, setHeartRateStatus] =
+    useState('Not measured')
+
+  const [spo2Status, setSpo2Status] =
+    useState('Waiting for sensor')
+
+  const [bloodPressureStatus, setBloodPressureStatus] =
+    useState('Waiting for sensor')
+
   const webcamRef = useRef(null)
   const canvasRef = useRef(null)
 
+  // Prevent overlapping face detection
+  const processingRef = useRef(false)
+  const animationRef = useRef(null)
 
   // ============================================================
   // LOAD FACE API MODELS
@@ -59,12 +82,11 @@ function App() {
         setIsModelLoaded(true)
 
         console.log('All AI models loaded successfully')
-
       } catch (err) {
         console.error('Error loading models:', err)
 
         setError(
-          'Failed to load AI models. Make sure the model files are inside the public/models folder.'
+          'Failed to load AI models. Make sure the model files are inside public/models.'
         )
       }
     }
@@ -72,18 +94,22 @@ function App() {
     loadModels()
   }, [])
 
-
   // ============================================================
   // PROCESS VIDEO
   // ============================================================
 
-  const processVideo = async () => {
+  const processVideo = useCallback(async () => {
     if (
       !webcamRef.current ||
       !canvasRef.current ||
       !isModelLoaded ||
       !isCameraOn
     ) {
+      return
+    }
+
+    // Prevent multiple AI detections running at once
+    if (processingRef.current) {
       return
     }
 
@@ -107,15 +133,14 @@ function App() {
     }
 
     try {
+      processingRef.current = true
       setIsProcessing(true)
 
-      // Match canvas with video
       faceapi.matchDimensions(
         canvas,
         displaySize
       )
 
-      // Detect faces
       const results = await faceapi
         .detectAllFaces(
           video,
@@ -130,14 +155,12 @@ function App() {
 
       setDetections(results)
 
-      // Resize detections
       const resizedDetections =
         faceapi.resizeResults(
           results,
           displaySize
         )
 
-      // Clear canvas
       const ctx = canvas.getContext('2d')
 
       ctx.clearRect(
@@ -147,10 +170,8 @@ function App() {
         canvas.height
       )
 
-      // Draw every detected face
       resizedDetections.forEach(
         (detection, index) => {
-
           const box =
             detection.detection.box
 
@@ -168,10 +189,6 @@ function App() {
               detection.genderProbability * 100
             )
 
-          // ----------------------------------------------------
-          // Face box
-          // ----------------------------------------------------
-
           const drawBox =
             new faceapi.draw.DrawBox(
               box,
@@ -188,10 +205,6 @@ function App() {
 
           drawBox.draw(canvas)
 
-          // ----------------------------------------------------
-          // Draw landmarks
-          // ----------------------------------------------------
-
           const landmarks =
             detection.landmarks
 
@@ -203,96 +216,109 @@ function App() {
 
           drawLandmarks.draw(canvas)
 
-          // ----------------------------------------------------
-          // Face information
-          // ----------------------------------------------------
-
           ctx.fillStyle = '#22c55e'
-
-          ctx.font =
-            'bold 14px Arial'
+          ctx.font = 'bold 14px Arial'
 
           ctx.fillText(
             `Face ${index + 1}`,
             box.x,
             Math.max(20, box.y - 10)
           )
+
+          // Keep variables used for clarity
+          void genderProbability
         }
       )
-
     } catch (err) {
-
       console.error(
         'Error processing video:',
         err
       )
-
     } finally {
-
+      processingRef.current = false
       setIsProcessing(false)
-
     }
-  }
-
-
-  // ============================================================
-  // START VIDEO PROCESSING
-  // ============================================================
-
-  useEffect(() => {
-
-    if (
-      isCameraOn &&
-      isModelLoaded
-    ) {
-
-      const interval =
-        setInterval(
-          processVideo,
-          150
-        )
-
-      return () =>
-        clearInterval(interval)
-    }
-
   }, [
-    isCameraOn,
     isModelLoaded,
+    isCameraOn,
     confidence
   ])
 
+  // ============================================================
+  // CONTROLLED VIDEO LOOP
+  // ============================================================
+
+  useEffect(() => {
+    if (!isCameraOn || !isModelLoaded) {
+      return
+    }
+
+    let stopped = false
+
+    const runDetection = async () => {
+      if (stopped) {
+        return
+      }
+
+      await processVideo()
+
+      if (!stopped) {
+        // Wait approximately 300ms before next detection
+        animationRef.current = setTimeout(
+          runDetection,
+          300
+        )
+      }
+    }
+
+    runDetection()
+
+    return () => {
+      stopped = true
+
+      if (animationRef.current) {
+        clearTimeout(animationRef.current)
+      }
+
+      processingRef.current = false
+    }
+  }, [
+    isCameraOn,
+    isModelLoaded,
+    processVideo
+  ])
 
   // ============================================================
   // TOGGLE CAMERA
   // ============================================================
 
   const toggleCamera = () => {
-
     setError(null)
-
     setDetections([])
-
     setCapturedImage(null)
+
+    if (isCameraOn) {
+      processingRef.current = false
+
+      if (animationRef.current) {
+        clearTimeout(animationRef.current)
+      }
+    }
 
     setIsCameraOn(
       current => !current
     )
   }
 
-
   // ============================================================
   // CAPTURE IMAGE
   // ============================================================
 
   const captureImage = () => {
-
     if (!webcamRef.current) {
-
       setError(
         'Camera is not available.'
       )
-
       return
     }
 
@@ -300,28 +326,21 @@ function App() {
       webcamRef.current.getScreenshot()
 
     if (!imageSrc) {
-
       setError(
         'Unable to capture image.'
       )
-
       return
     }
 
-    setCapturedImage(
-      imageSrc
-    )
-
+    setCapturedImage(imageSrc)
     setError(null)
   }
-
 
   // ============================================================
   // DOWNLOAD IMAGE
   // ============================================================
 
   const downloadImage = () => {
-
     if (!capturedImage) {
       return
     }
@@ -342,31 +361,50 @@ function App() {
     document.body.removeChild(link)
   }
 
-
   // ============================================================
   // RESET
   // ============================================================
 
   const resetApp = () => {
+    if (animationRef.current) {
+      clearTimeout(animationRef.current)
+    }
+
+    processingRef.current = false
 
     setIsCameraOn(false)
-
     setDetections([])
-
     setCapturedImage(null)
-
     setError(null)
-
     setShowSettings(false)
-  }
 
+    // Reset health measurements
+    setHeartRate(null)
+    setSpo2(null)
+
+    setBloodPressure({
+      systolic: null,
+      diastolic: null
+    })
+
+    setHeartRateStatus(
+      'Not measured'
+    )
+
+    setSpo2Status(
+      'Waiting for sensor'
+    )
+
+    setBloodPressureStatus(
+      'Waiting for sensor'
+    )
+  }
 
   // ============================================================
   // VIDEO CONSTRAINTS
   // ============================================================
 
   const videoConstraints = {
-
     width: {
       ideal: 1280
     },
@@ -378,15 +416,12 @@ function App() {
     facingMode: 'user'
   }
 
-
   // ============================================================
   // RENDER
   // ============================================================
 
   return (
-
     <div className="app">
-
 
       {/* ======================================================
           HEADER
@@ -408,24 +443,19 @@ function App() {
 
             </div>
 
-
             <div className="brand-text">
 
               <h1>
-                AI Face Detector
+                AI Face & Health Analyzer
               </h1>
 
               <p>
-                Real-time face detection,
-                age estimation and analysis
+                Real-time facial analysis and health monitoring
               </p>
 
             </div>
 
           </div>
-
-
-          {/* MODEL STATUS */}
 
           <div
             className={
@@ -444,11 +474,9 @@ function App() {
             )}
 
             <span>
-
               {isModelLoaded
                 ? 'AI Model Ready'
                 : 'Loading AI Model...'}
-
             </span>
 
           </div>
@@ -457,35 +485,30 @@ function App() {
 
       </header>
 
-
       {/* ======================================================
           MAIN
       ====================================================== */}
 
       <main className="main">
 
-
-        {/* ====================================================
-            PAGE TITLE
-        ==================================================== */}
+        {/* PAGE TITLE */}
 
         <section className="page-title">
 
           <div>
 
             <h2>
-              Facial Recognition
+              Facial Recognition & Health
             </h2>
 
             <p>
-              Use your camera to detect faces
-              and analyze facial attributes.
+              Analyze facial attributes and connect validated
+              health measurement systems.
             </p>
 
           </div>
 
         </section>
-
 
         {/* ====================================================
             CONTROLS
@@ -519,22 +542,16 @@ function App() {
 
             </button>
 
-
             {isCameraOn && (
-
               <>
 
                 <button
                   onClick={captureImage}
                   className="control-btn secondary"
                 >
-
                   <Camera size={19} />
-
                   Capture
-
                 </button>
-
 
                 <button
                   onClick={() =>
@@ -544,31 +561,22 @@ function App() {
                   }
                   className="control-btn secondary"
                 >
-
                   <Settings size={19} />
-
                   Settings
-
                 </button>
-
 
                 <button
                   onClick={resetApp}
                   className="control-btn secondary"
                 >
-
                   <RotateCcw size={19} />
-
                   Reset
-
                 </button>
 
               </>
-
             )}
 
           </div>
-
 
           {/* SETTINGS */}
 
@@ -586,7 +594,6 @@ function App() {
 
               </div>
 
-
               <div className="setting-item">
 
                 <div className="setting-label">
@@ -602,7 +609,6 @@ function App() {
                   </strong>
 
                 </div>
-
 
                 <input
                   type="range"
@@ -639,10 +645,7 @@ function App() {
 
         </section>
 
-
-        {/* ====================================================
-            ERROR
-        ==================================================== */}
+        {/* ERROR */}
 
         {error && (
 
@@ -666,10 +669,7 @@ function App() {
 
         )}
 
-
-        {/* ====================================================
-            LOADING
-        ==================================================== */}
+        {/* LOADING */}
 
         {!isModelLoaded && !error && (
 
@@ -682,14 +682,13 @@ function App() {
             </h3>
 
             <p>
-              Please wait while the face
-              recognition models are loaded.
+              Please wait while the face recognition
+              models are loaded.
             </p>
 
           </div>
 
         )}
-
 
         {/* ====================================================
             CAMERA
@@ -706,12 +705,10 @@ function App() {
               </h3>
 
               <p>
-                Position your face in front
-                of the camera.
+                Position your face in front of the camera.
               </p>
 
             </div>
-
 
             <div
               className={
@@ -733,7 +730,6 @@ function App() {
 
           </div>
 
-
           <div className="camera-container">
 
             {isCameraOn ? (
@@ -751,29 +747,19 @@ function App() {
                   className="webcam"
                 />
 
-
                 <canvas
                   ref={canvasRef}
                   className="detection-canvas"
                 />
 
-
-                {/* SCAN FRAME */}
-
                 <div className="scan-frame">
 
                   <span className="corner top-left"></span>
-
                   <span className="corner top-right"></span>
-
                   <span className="corner bottom-left"></span>
-
                   <span className="corner bottom-right"></span>
 
                 </div>
-
-
-                {/* PROCESSING */}
 
                 {isProcessing && (
 
@@ -782,7 +768,7 @@ function App() {
                     <div className="processing-spinner"></div>
 
                     <span>
-                      Processing...
+                      AI scanning...
                     </span>
 
                   </div>
@@ -796,9 +782,7 @@ function App() {
               <div className="camera-placeholder">
 
                 <div className="placeholder-icon">
-
                   <Camera size={55} />
-
                 </div>
 
                 <h3>
@@ -806,8 +790,8 @@ function App() {
                 </h3>
 
                 <p>
-                  Click "Start Camera" to
-                  begin face detection.
+                  Click "Start Camera" to begin
+                  face detection.
                 </p>
 
               </div>
@@ -818,6 +802,216 @@ function App() {
 
         </section>
 
+        {/* ====================================================
+            HEALTH DASHBOARD
+        ==================================================== */}
+
+        <section className="health-section">
+
+          <div className="section-heading">
+
+            <div>
+
+              <h3>
+                Health Monitoring
+              </h3>
+
+              <p>
+                Vital-sign measurements require a validated
+                algorithm or physical sensor.
+              </p>
+
+            </div>
+
+            <div className="health-disclaimer">
+
+              <ShieldCheck size={16} />
+
+              Measurement status
+
+            </div>
+
+          </div>
+
+          <div className="health-grid">
+
+            {/* HEART RATE */}
+
+            <div className="health-card heart-card">
+
+              <div className="health-card-top">
+
+                <div className="health-icon">
+                  <HeartPulse size={25} />
+                </div>
+
+                <span className="health-status">
+                  {heartRateStatus}
+                </span>
+
+              </div>
+
+              <div className="health-card-title">
+                Heart Rate
+              </div>
+
+              <div className="health-value">
+
+                {heartRate !== null ? (
+                  <>
+                    {heartRate}
+                    <small>
+                      BPM
+                    </small>
+                  </>
+                ) : (
+                  <>
+                    --
+                    <small>
+                      BPM
+                    </small>
+                  </>
+                )}
+
+              </div>
+
+              <p className="health-description">
+                Webcam rPPG measurement can be
+                connected here.
+              </p>
+
+              {isCameraOn && (
+                <div className="measurement-message">
+                  <Activity size={15} />
+                  Ready for rPPG analysis
+                </div>
+              )}
+
+            </div>
+
+            {/* SPO2 */}
+
+            <div className="health-card spo2-card">
+
+              <div className="health-card-top">
+
+                <div className="health-icon">
+                  <Droplets size={25} />
+                </div>
+
+                <span className="health-status">
+                  {spo2Status}
+                </span>
+
+              </div>
+
+              <div className="health-card-title">
+                Blood Oxygen
+              </div>
+
+              <div className="health-value">
+
+                {spo2 !== null ? (
+                  <>
+                    {spo2}
+                    <small>
+                      %
+                    </small>
+                  </>
+                ) : (
+                  <>
+                    --
+                    <small>
+                      %
+                    </small>
+                  </>
+                )}
+
+              </div>
+
+              <p className="health-description">
+                Requires a validated SpO₂ sensor
+                or supported measurement model.
+              </p>
+
+              <div className="measurement-message">
+                <Info size={15} />
+                Sensor required
+              </div>
+
+            </div>
+
+            {/* BLOOD PRESSURE */}
+
+            <div className="health-card bp-card">
+
+              <div className="health-card-top">
+
+                <div className="health-icon">
+                  <Stethoscope size={25} />
+                </div>
+
+                <span className="health-status">
+                  {bloodPressureStatus}
+                </span>
+
+              </div>
+
+              <div className="health-card-title">
+                Blood Pressure
+              </div>
+
+              <div className="bp-values">
+
+                <div>
+
+                  <strong>
+                    {bloodPressure.systolic ?? '--'}
+                  </strong>
+
+                  <span>
+                    SYS
+                  </span>
+
+                </div>
+
+                <div className="bp-slash">
+                  /
+                </div>
+
+                <div>
+
+                  <strong>
+                    {bloodPressure.diastolic ?? '--'}
+                  </strong>
+
+                  <span>
+                    DIA
+                  </span>
+
+                </div>
+
+                <div className="bp-unit">
+                  mmHg
+                </div>
+
+              </div>
+
+              <p className="health-description">
+                Requires a validated blood-pressure
+                monitor or approved measurement system.
+              </p>
+
+              <div className="measurement-message">
+                <Info size={15} />
+                BP sensor required
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
 
         {/* ====================================================
             DETECTION SUMMARY
@@ -856,7 +1050,6 @@ function App() {
               </div>
 
             </div>
-
 
             <div className="detections-grid">
 
@@ -914,7 +1107,6 @@ function App() {
 
                       </div>
 
-
                       <div className="detection-info">
 
                         <div className="info-item">
@@ -929,7 +1121,6 @@ function App() {
 
                         </div>
 
-
                         <div className="info-item">
 
                           <span className="label">
@@ -942,7 +1133,6 @@ function App() {
 
                         </div>
 
-
                         <div className="info-item">
 
                           <span className="label">
@@ -954,7 +1144,6 @@ function App() {
                           </span>
 
                         </div>
-
 
                         <div className="info-item">
 
@@ -971,7 +1160,6 @@ function App() {
                       </div>
 
                     </div>
-
                   )
                 }
               )}
@@ -981,7 +1169,6 @@ function App() {
           </section>
 
         )}
-
 
         {/* ====================================================
             CAPTURED IMAGE
@@ -1000,13 +1187,12 @@ function App() {
                 </h3>
 
                 <p>
-                  Your captured face image
+                  Image captured manually
                 </p>
 
               </div>
 
             </div>
-
 
             <div className="captured-content">
 
@@ -1015,7 +1201,6 @@ function App() {
                 alt="Captured face"
                 className="captured-image"
               />
-
 
               <button
                 onClick={downloadImage}
@@ -1034,8 +1219,34 @@ function App() {
 
         )}
 
-      </main>
+        {/* ====================================================
+            MEDICAL NOTICE
+        ==================================================== */}
 
+        <div className="medical-notice">
+
+          <ShieldCheck size={20} />
+
+          <div>
+
+            <strong>
+              Measurement Notice
+            </strong>
+
+            <p>
+              Heart rate, SpO₂ and blood-pressure
+              values are not produced by face-api.js.
+              This dashboard currently provides integration
+              points for validated algorithms and physical
+              medical sensors. Do not use placeholder values
+              for diagnosis or medical decisions.
+            </p>
+
+          </div>
+
+        </div>
+
+      </main>
 
       {/* ======================================================
           FOOTER
@@ -1054,7 +1265,7 @@ function App() {
           <div>
 
             <strong>
-              eTouchUS AI Face Recognition
+              eTouchUS AI Face & Health Analyzer
             </strong>
 
             <p>
@@ -1070,6 +1281,5 @@ function App() {
     </div>
   )
 }
-
 
 export default App
