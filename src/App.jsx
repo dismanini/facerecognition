@@ -30,16 +30,27 @@ function App() {
 
   const [isModelLoaded, setIsModelLoaded] = useState(false)
   const [isCameraOn, setIsCameraOn] = useState(false)
+
+  // Live detection results
   const [detections, setDetections] = useState([])
+
+  // Captured/frozen detection results
+  const [capturedDetections, setCapturedDetections] = useState([])
+
   const [isProcessing, setIsProcessing] = useState(false)
   const [error, setError] = useState(null)
   const [capturedImage, setCapturedImage] = useState(null)
   const [showSettings, setShowSettings] = useState(false)
   const [confidence, setConfidence] = useState(0.5)
 
-  // Health measurements
+  // ============================================================
+  // HEALTH MEASUREMENTS
+  // ============================================================
+
   const [heartRate, setHeartRate] = useState(null)
+
   const [spo2, setSpo2] = useState(null)
+
   const [bloodPressure, setBloodPressure] = useState({
     systolic: null,
     diastolic: null
@@ -54,11 +65,17 @@ function App() {
   const [bloodPressureStatus, setBloodPressureStatus] =
     useState('Waiting for sensor')
 
+  // ============================================================
+  // REFS
+  // ============================================================
+
   const webcamRef = useRef(null)
   const canvasRef = useRef(null)
 
   // Prevent overlapping face detection
   const processingRef = useRef(false)
+
+  // Detection loop timer
   const animationRef = useRef(null)
 
   // ============================================================
@@ -108,15 +125,19 @@ function App() {
       return
     }
 
-    // Prevent multiple AI detections running at once
+    // Prevent multiple detections running simultaneously
     if (processingRef.current) {
       return
     }
 
-    const video = webcamRef.current.video
+    const video = webcamRef.current?.video
     const canvas = canvasRef.current
 
-    if (!video || video.readyState !== 4) {
+    if (!video || !canvas) {
+      return
+    }
+
+    if (video.readyState !== 4) {
       return
     }
 
@@ -134,6 +155,7 @@ function App() {
 
     try {
       processingRef.current = true
+
       setIsProcessing(true)
 
       faceapi.matchDimensions(
@@ -153,7 +175,15 @@ function App() {
         .withFaceExpressions()
         .withAgeAndGender()
 
+      // ========================================================
+      // LIVE DETECTION
+      // ========================================================
+
       setDetections(results)
+
+      // ========================================================
+      // DRAW DETECTIONS
+      // ========================================================
 
       const resizedDetections =
         faceapi.resizeResults(
@@ -189,6 +219,15 @@ function App() {
               detection.genderProbability * 100
             )
 
+          const faceConfidence =
+            Math.round(
+              detectionScore * 100
+            )
+
+          // ====================================================
+          // FACE BOX
+          // ====================================================
+
           const drawBox =
             new faceapi.draw.DrawBox(
               box,
@@ -197,13 +236,15 @@ function App() {
                   `Face ${index + 1} | ` +
                   `Age: ${age} | ` +
                   `Gender: ${gender} | ` +
-                  `Confidence: ${Math.round(
-                    detectionScore * 100
-                  )}%`
+                  `Confidence: ${faceConfidence}%`
               }
             )
 
           drawBox.draw(canvas)
+
+          // ====================================================
+          // LANDMARKS
+          // ====================================================
 
           const landmarks =
             detection.landmarks
@@ -216,16 +257,25 @@ function App() {
 
           drawLandmarks.draw(canvas)
 
+          // ====================================================
+          // FACE LABEL
+          // ====================================================
+
           ctx.fillStyle = '#22c55e'
-          ctx.font = 'bold 14px Arial'
+
+          ctx.font =
+            'bold 14px Arial'
 
           ctx.fillText(
             `Face ${index + 1}`,
             box.x,
-            Math.max(20, box.y - 10)
+            Math.max(
+              20,
+              box.y - 10
+            )
           )
 
-          // Keep variables used for clarity
+          // Prevent unused variable warning
           void genderProbability
         }
       )
@@ -236,6 +286,7 @@ function App() {
       )
     } finally {
       processingRef.current = false
+
       setIsProcessing(false)
     }
   }, [
@@ -245,11 +296,14 @@ function App() {
   ])
 
   // ============================================================
-  // CONTROLLED VIDEO LOOP
+  // CONTROLLED DETECTION LOOP
   // ============================================================
 
   useEffect(() => {
-    if (!isCameraOn || !isModelLoaded) {
+    if (
+      !isCameraOn ||
+      !isModelLoaded
+    ) {
       return
     }
 
@@ -263,11 +317,11 @@ function App() {
       await processVideo()
 
       if (!stopped) {
-        // Wait approximately 300ms before next detection
-        animationRef.current = setTimeout(
-          runDetection,
-          300
-        )
+        animationRef.current =
+          setTimeout(
+            runDetection,
+            300
+          )
       }
     }
 
@@ -277,7 +331,11 @@ function App() {
       stopped = true
 
       if (animationRef.current) {
-        clearTimeout(animationRef.current)
+        clearTimeout(
+          animationRef.current
+        )
+
+        animationRef.current = null
       }
 
       processingRef.current = false
@@ -294,24 +352,52 @@ function App() {
 
   const toggleCamera = () => {
     setError(null)
-    setDetections([])
-    setCapturedImage(null)
 
-    if (isCameraOn) {
-      processingRef.current = false
+    if (!isModelLoaded) {
+      setError(
+        'AI models are still loading. Please wait.'
+      )
 
-      if (animationRef.current) {
-        clearTimeout(animationRef.current)
-      }
+      return
     }
 
-    setIsCameraOn(
-      current => !current
-    )
+    // ========================================================
+    // STOP CAMERA
+    // ========================================================
+
+    if (isCameraOn) {
+      if (animationRef.current) {
+        clearTimeout(
+          animationRef.current
+        )
+
+        animationRef.current = null
+      }
+
+      processingRef.current = false
+
+      setIsCameraOn(false)
+
+      setDetections([])
+
+      return
+    }
+
+    // ========================================================
+    // START CAMERA
+    // ========================================================
+
+    setCapturedImage(null)
+
+    setCapturedDetections([])
+
+    setDetections([])
+
+    setIsCameraOn(true)
   }
 
   // ============================================================
-  // CAPTURE IMAGE
+  // CAPTURE IMAGE + FREEZE CURRENT RESULT
   // ============================================================
 
   const captureImage = () => {
@@ -319,6 +405,7 @@ function App() {
       setError(
         'Camera is not available.'
       )
+
       return
     }
 
@@ -329,11 +416,67 @@ function App() {
       setError(
         'Unable to capture image.'
       )
+
       return
     }
 
+    // ========================================================
+    // SAVE IMAGE
+    // ========================================================
+
     setCapturedImage(imageSrc)
+
+    // ========================================================
+    // FREEZE CURRENT DETECTION
+    //
+    // Important:
+    // We create a copy of the current detection array.
+    //
+    // Future live detection changes will NOT change this
+    // captured result.
+    // ========================================================
+
+    const frozenDetections =
+      detections.map(
+        (detection) => ({
+          age: detection.age,
+
+          gender: detection.gender,
+
+          genderProbability:
+            detection.genderProbability,
+
+          detection: {
+            score:
+              detection.detection.score,
+
+            box: {
+              x:
+                detection.detection.box.x,
+
+              y:
+                detection.detection.box.y,
+
+              width:
+                detection.detection.box.width,
+
+              height:
+                detection.detection.box.height
+            }
+          }
+        })
+      )
+
+    setCapturedDetections(
+      frozenDetections
+    )
+
     setError(null)
+
+    console.log(
+      'Captured image and froze detection results:',
+      frozenDetections
+    )
   }
 
   // ============================================================
@@ -367,19 +510,31 @@ function App() {
 
   const resetApp = () => {
     if (animationRef.current) {
-      clearTimeout(animationRef.current)
+      clearTimeout(
+        animationRef.current
+      )
+
+      animationRef.current = null
     }
 
     processingRef.current = false
 
     setIsCameraOn(false)
+
     setDetections([])
+
+    setCapturedDetections([])
+
     setCapturedImage(null)
+
     setError(null)
+
     setShowSettings(false)
 
     // Reset health measurements
+
     setHeartRate(null)
+
     setSpo2(null)
 
     setBloodPressure({
@@ -398,6 +553,35 @@ function App() {
     setBloodPressureStatus(
       'Waiting for sensor'
     )
+  }
+
+  // ============================================================
+  // CAMERA ERROR
+  // ============================================================
+
+  const handleCameraError = (cameraError) => {
+    console.error(
+      'Camera error:',
+      cameraError
+    )
+
+    setError(
+      'Camera could not be accessed. Please allow camera permission in your browser.'
+    )
+
+    setIsCameraOn(false)
+  }
+
+  // ============================================================
+  // CAMERA SUCCESS
+  // ============================================================
+
+  const handleCameraSuccess = () => {
+    console.log(
+      'Camera started successfully'
+    )
+
+    setError(null)
   }
 
   // ============================================================
@@ -474,9 +658,11 @@ function App() {
             )}
 
             <span>
+
               {isModelLoaded
                 ? 'AI Model Ready'
                 : 'Loading AI Model...'}
+
             </span>
 
           </div>
@@ -549,8 +735,11 @@ function App() {
                   onClick={captureImage}
                   className="control-btn secondary"
                 >
+
                   <Camera size={19} />
+
                   Capture
+
                 </button>
 
                 <button
@@ -561,16 +750,22 @@ function App() {
                   }
                   className="control-btn secondary"
                 >
+
                   <Settings size={19} />
+
                   Settings
+
                 </button>
 
                 <button
                   onClick={resetApp}
                   className="control-btn secondary"
                 >
+
                   <RotateCcw size={19} />
+
                   Reset
+
                 </button>
 
               </>
@@ -745,6 +940,14 @@ function App() {
                     videoConstraints
                   }
                   className="webcam"
+
+                  onUserMedia={
+                    handleCameraSuccess
+                  }
+
+                  onUserMediaError={
+                    handleCameraError
+                  }
                 />
 
                 <canvas
@@ -755,8 +958,11 @@ function App() {
                 <div className="scan-frame">
 
                   <span className="corner top-left"></span>
+
                   <span className="corner top-right"></span>
+
                   <span className="corner bottom-left"></span>
+
                   <span className="corner bottom-right"></span>
 
                 </div>
@@ -782,7 +988,9 @@ function App() {
               <div className="camera-placeholder">
 
                 <div className="placeholder-icon">
+
                   <Camera size={55} />
+
                 </div>
 
                 <h3>
@@ -803,13 +1011,7 @@ function App() {
         </section>
 
         {/* ====================================================
-            HEALTH DASHBOARD
-        ==================================================== */}
-
-      
-
-        {/* ====================================================
-            DETECTION SUMMARY
+            LIVE DETECTION RESULTS
         ==================================================== */}
 
         {detections.length > 0 && (
@@ -821,7 +1023,7 @@ function App() {
               <div>
 
                 <h3>
-                  Detection Results
+                  Live Detection Results
                 </h3>
 
                 <p>
@@ -831,6 +1033,7 @@ function App() {
                   {detections.length > 1
                     ? 's'
                     : ''}
+                  {' '}
                   detected
                 </p>
 
@@ -895,7 +1098,7 @@ function App() {
                           </h4>
 
                           <span>
-                            Detected
+                            Live
                           </span>
 
                         </div>
@@ -955,6 +1158,7 @@ function App() {
                       </div>
 
                     </div>
+
                   )
                 }
               )}
@@ -982,8 +1186,16 @@ function App() {
                 </h3>
 
                 <p>
-                  Image captured manually
+                  Face analysis frozen at capture time
                 </p>
+
+              </div>
+
+              <div className="detection-status">
+
+                <CheckCircle size={18} />
+
+                Result Frozen
 
               </div>
 
@@ -991,22 +1203,155 @@ function App() {
 
             <div className="captured-content">
 
-              <img
-                src={capturedImage}
-                alt="Captured face"
-                className="captured-image"
-              />
+              <div className="captured-image-wrapper">
 
-              <button
-                onClick={downloadImage}
-                className="control-btn primary"
-              >
+                <img
+                  src={capturedImage}
+                  alt="Captured face"
+                  className="captured-image"
+                />
 
-                <Download size={19} />
+              </div>
 
-                Download Image
+              <div className="captured-results">
 
-              </button>
+                <h4>
+                  Captured Analysis
+                </h4>
+
+                {capturedDetections.length === 0 ? (
+
+                  <div className="no-captured-face">
+
+                    <AlertCircle size={18} />
+
+                    <span>
+                      No face was detected at the moment
+                      of capture.
+                    </span>
+
+                  </div>
+
+                ) : (
+
+                  capturedDetections.map(
+                    (detection, index) => {
+
+                      const age =
+                        Math.round(
+                          detection.age
+                        )
+
+                      const gender =
+                        detection.gender
+
+                      const genderProbability =
+                        Math.round(
+                          detection.genderProbability *
+                          100
+                        )
+
+                      const faceConfidence =
+                        Math.round(
+                          detection.detection.score *
+                          100
+                        )
+
+                      return (
+
+                        <div
+                          key={index}
+                          className="captured-result-card"
+                        >
+
+                          <div className="captured-face-title">
+
+                            <div className="face-icon">
+
+                              <UserRound
+                                size={20}
+                              />
+
+                            </div>
+
+                            <strong>
+                              Face {index + 1}
+                            </strong>
+
+                          </div>
+
+                          <div className="captured-result-grid">
+
+                            <div>
+
+                              <span>
+                                Estimated Age
+                              </span>
+
+                              <strong>
+                                {age} years
+                              </strong>
+
+                            </div>
+
+                            <div>
+
+                              <span>
+                                Gender
+                              </span>
+
+                              <strong>
+                                {gender}
+                              </strong>
+
+                            </div>
+
+                            <div>
+
+                              <span>
+                                Gender Confidence
+                              </span>
+
+                              <strong>
+                                {genderProbability}%
+                              </strong>
+
+                            </div>
+
+                            <div>
+
+                              <span>
+                                Face Confidence
+                              </span>
+
+                              <strong>
+                                {faceConfidence}%
+                              </strong>
+
+                            </div>
+
+                          </div>
+
+                        </div>
+
+                      )
+                    }
+                  )
+
+                )}
+
+                <button
+                  onClick={downloadImage}
+                  className="control-btn primary"
+                >
+
+                  <Download size={19} />
+
+                  Download Image
+
+                </button>
+
+              </div>
 
             </div>
 
@@ -1014,9 +1359,11 @@ function App() {
 
         )}
 
+        {/* ====================================================
+            HEALTH DASHBOARD
+        ==================================================== */}
 
-
-          <section className="health-section">
+        <section className="health-section">
 
           <div className="section-heading">
 
@@ -1045,130 +1392,186 @@ function App() {
 
           <div className="health-grid">
 
-            {/* HEART RATE */}
+            {/* =================================================
+                HEART RATE
+            ================================================= */}
 
             <div className="health-card heart-card">
 
               <div className="health-card-top">
 
                 <div className="health-icon">
+
                   <HeartPulse size={25} />
+
                 </div>
 
                 <span className="health-status">
+
                   {heartRateStatus}
+
                 </span>
 
               </div>
 
               <div className="health-card-title">
+
                 Heart Rate
+
               </div>
 
               <div className="health-value">
 
                 {heartRate !== null ? (
+
                   <>
+
                     {heartRate}
+
                     <small>
                       BPM
                     </small>
+
                   </>
+
                 ) : (
+
                   <>
+
                     --
+
                     <small>
                       BPM
                     </small>
+
                   </>
+
                 )}
 
               </div>
 
               <p className="health-description">
+
                 Webcam rPPG measurement can be
                 connected here.
+
               </p>
 
               {isCameraOn && (
+
                 <div className="measurement-message">
+
                   <Activity size={15} />
+
                   Ready for rPPG analysis
+
                 </div>
+
               )}
 
             </div>
 
-            {/* SPO2 */}
+            {/* =================================================
+                SPO2
+            ================================================= */}
 
             <div className="health-card spo2-card">
 
               <div className="health-card-top">
 
                 <div className="health-icon">
+
                   <Droplets size={25} />
+
                 </div>
 
                 <span className="health-status">
+
                   {spo2Status}
+
                 </span>
 
               </div>
 
               <div className="health-card-title">
+
                 Blood Oxygen
+
               </div>
 
               <div className="health-value">
 
                 {spo2 !== null ? (
+
                   <>
+
                     {spo2}
+
                     <small>
                       %
                     </small>
+
                   </>
+
                 ) : (
+
                   <>
+
                     --
+
                     <small>
                       %
                     </small>
+
                   </>
+
                 )}
 
               </div>
 
               <p className="health-description">
+
                 Requires a validated SpO₂ sensor
                 or supported measurement model.
+
               </p>
 
               <div className="measurement-message">
+
                 <Info size={15} />
+
                 Sensor required
+
               </div>
 
             </div>
 
-            {/* BLOOD PRESSURE */}
+            {/* =================================================
+                BLOOD PRESSURE
+            ================================================= */}
 
             <div className="health-card bp-card">
 
               <div className="health-card-top">
 
                 <div className="health-icon">
+
                   <Stethoscope size={25} />
+
                 </div>
 
                 <span className="health-status">
+
                   {bloodPressureStatus}
+
                 </span>
 
               </div>
 
               <div className="health-card-title">
+
                 Blood Pressure
+
               </div>
 
               <div className="bp-values">
@@ -1208,13 +1611,18 @@ function App() {
               </div>
 
               <p className="health-description">
+
                 Requires a validated blood-pressure
                 monitor or approved measurement system.
+
               </p>
 
               <div className="measurement-message">
+
                 <Info size={15} />
+
                 BP sensor required
+
               </div>
 
             </div>
@@ -1238,12 +1646,14 @@ function App() {
             </strong>
 
             <p>
+
               Heart rate, SpO₂ and blood-pressure
               values are not produced by face-api.js.
               This dashboard currently provides integration
               points for validated algorithms and physical
               medical sensors. Do not use placeholder values
               for diagnosis or medical decisions.
+
             </p>
 
           </div>
