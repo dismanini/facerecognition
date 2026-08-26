@@ -1,100 +1,199 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Webcam from "react-webcam";
 import * as faceapi from "face-api.js";
+
 import {
   Camera,
   CameraOff,
   RotateCcw,
   Download,
   Settings,
-  ScanFace,
-  User,
+  Brain,
+  UserRound,
   Activity,
+  CheckCircle,
+  AlertCircle,
+  HeartPulse,
+  Droplets,
+  Stethoscope,
+  ShieldCheck,
+  Info,
 } from "lucide-react";
 
 import logo from "./assets/etouchus_face_recognition_logo.png";
 import "./App.css";
 
 function App() {
-  const [isModelLoaded, setIsModelLoaded] = useState(false);
-  const [isCameraOn, setIsCameraOn] = useState(false);
-  const [detections, setDetections] = useState([]);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState(null);
-  const [capturedImage, setCapturedImage] = useState(null);
-  const [showSettings, setShowSettings] = useState(false);
-  const [confidence, setConfidence] = useState(0.5);
+  // ============================================================
+  // REFS
+  // ============================================================
 
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
 
+  const detectionRunning = useRef(false);
+  const timerRef = useRef(null);
+
   // ============================================================
-  // LOAD FACE-API MODELS
+  // AI STATE
+  // ============================================================
+
+  const [modelsLoaded, setModelsLoaded] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  // ============================================================
+  // CAMERA STATE
+  // ============================================================
+
+  const [cameraOn, setCameraOn] = useState(false);
+  const [cameraReady, setCameraReady] = useState(false);
+
+  // ============================================================
+  // FACE DETECTION
+  // ============================================================
+
+  const [detections, setDetections] = useState([]);
+  const [capturedDetections, setCapturedDetections] = useState([]);
+
+  // ============================================================
+  // CAPTURE
+  // ============================================================
+
+  const [capturedImage, setCapturedImage] = useState(null);
+
+  // ============================================================
+  // UI
+  // ============================================================
+
+  const [error, setError] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [confidence, setConfidence] = useState(0.5);
+
+  // ============================================================
+  // HEALTH UI
+  // ============================================================
+
+  const [heartRate] = useState(null);
+  const [spo2] = useState(null);
+
+  const [bloodPressure] = useState({
+    systolic: null,
+    diastolic: null,
+  });
+
+  // ============================================================
+  // LOAD FACE API MODELS
   // ============================================================
 
   useEffect(() => {
-    const loadModels = async () => {
-      try {
-        setError(null);
+    let mounted = true;
 
-        const MODEL_URL = "/models";
+    async function loadModels() {
+      try {
+        setError("");
+
+        console.log("Loading face-api.js models...");
 
         await Promise.all([
-          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
-          faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-          faceapi.nets.ageGenderNet.loadFromUri(MODEL_URL),
+          faceapi.nets.tinyFaceDetector.loadFromUri("/models"),
+          faceapi.nets.faceLandmark68Net.loadFromUri("/models"),
+          faceapi.nets.faceExpressionNet.loadFromUri("/models"),
+          faceapi.nets.ageGenderNet.loadFromUri("/models"),
         ]);
 
-        setIsModelLoaded(true);
+        if (mounted) {
+          setModelsLoaded(true);
+        }
 
-        console.log("Face API models loaded successfully");
+        console.log("All models loaded successfully.");
       } catch (err) {
-        console.error("Model loading error:", err);
+        console.error("MODEL ERROR:", err);
 
-        setError(
-          "Failed to load AI models. Make sure your model files are inside public/models."
-        );
+        if (mounted) {
+          setError(
+            "AI models could not be loaded. Check that the model files are inside public/models."
+          );
+        }
       }
-    };
+    }
 
     loadModels();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   // ============================================================
-  // PROCESS VIDEO
+  // CAMERA SUCCESS
   // ============================================================
 
-  const processVideo = async () => {
+  const handleCameraSuccess = useCallback(() => {
+    console.log("CAMERA SUCCESS");
+
+    setCameraReady(true);
+    setError("");
+  }, []);
+
+  // ============================================================
+  // CAMERA ERROR
+  // ============================================================
+
+  const handleCameraError = useCallback((err) => {
+    console.error("CAMERA ERROR:", err);
+
+    setCameraReady(false);
+    setCameraOn(false);
+
+    setError(
+      "Camera could not start. Please allow camera permission in your browser and make sure another application is not using the webcam."
+    );
+  }, []);
+
+  // ============================================================
+  // FACE DETECTION
+  // ============================================================
+
+  const detectFaces = useCallback(async () => {
+    if (!cameraOn) return;
+    if (!cameraReady) return;
+    if (!modelsLoaded) return;
+    if (detectionRunning.current) return;
+
+    const webcam = webcamRef.current;
+    const canvas = canvasRef.current;
+
+    if (!webcam || !canvas) return;
+
+    const video = webcam.video;
+
+    if (!video) return;
+
+    if (video.readyState !== 4) return;
+
     if (
-      !webcamRef.current ||
-      !canvasRef.current ||
-      !isModelLoaded ||
-      !isCameraOn
+      video.videoWidth === 0 ||
+      video.videoHeight === 0
     ) {
       return;
     }
 
-    const video = webcamRef.current.video;
-    const canvas = canvasRef.current;
-
-    if (!video || video.readyState !== 4) {
-      return;
-    }
-
-    const displaySize = {
-      width: video.videoWidth,
-      height: video.videoHeight,
-    };
-
-    if (!displaySize.width || !displaySize.height) {
-      return;
-    }
+    detectionRunning.current = true;
+    setIsProcessing(true);
 
     try {
-      setIsProcessing(true);
+      const displaySize = {
+        width: video.videoWidth,
+        height: video.videoHeight,
+      };
 
-      faceapi.matchDimensions(canvas, displaySize);
+      canvas.width = displaySize.width;
+      canvas.height = displaySize.height;
+
+      faceapi.matchDimensions(
+        canvas,
+        displaySize
+      );
 
       const results = await faceapi
         .detectAllFaces(
@@ -110,10 +209,11 @@ function App() {
 
       setDetections(results);
 
-      const resizedDetections = faceapi.resizeResults(
-        results,
-        displaySize
-      );
+      const resizedResults =
+        faceapi.resizeResults(
+          results,
+          displaySize
+        );
 
       const ctx = canvas.getContext("2d");
 
@@ -124,123 +224,152 @@ function App() {
         canvas.height
       );
 
-      // Draw detection boxes
-      resizedDetections.forEach((detection, index) => {
-        const box = detection.detection.box;
+      resizedResults.forEach(
+        (result, index) => {
+          const box = result.detection.box;
 
-        // Bounding box
-        const drawBox = new faceapi.draw.DrawBox(box, {
-          label: `Face ${index + 1} | Age: ${Math.round(
-            detection.age
-          )} | ${detection.gender}`,
-        });
+          const age = Math.round(result.age);
 
-        drawBox.draw(canvas);
+          const gender = result.gender;
 
-        // Draw landmarks
-        const landmarks =
-          detection.landmarks;
-
-        const drawLandmarks =
-          new faceapi.draw.DrawFaceLandmarks(
-            box,
-            {
-              lineWidth: 1,
-              drawLines: true,
-            }
+          const faceScore = Math.round(
+            result.detection.score * 100
           );
 
-        if (landmarks) {
-          faceapi.draw.drawFaceLandmarks(
-            canvas,
-            [detection]
+          const genderScore = Math.round(
+            result.genderProbability * 100
+          );
+
+          const drawBox =
+            new faceapi.draw.DrawBox(
+              box,
+              {
+                label:
+                  `Face ${index + 1} | ` +
+                  `Age: ${age} | ` +
+                  `Gender: ${gender} | ` +
+                  `Confidence: ${faceScore}%`,
+              }
+            );
+
+          drawBox.draw(canvas);
+
+          const drawLandmarks =
+            new faceapi.draw.DrawFaceLandmarks(
+              box,
+              result.landmarks
+            );
+
+          drawLandmarks.draw(canvas);
+
+          ctx.fillStyle = "#22c55e";
+          ctx.font = "bold 14px Arial";
+
+          ctx.fillText(
+            `Gender ${genderScore}%`,
+            box.x,
+            Math.max(20, box.y - 10)
           );
         }
-
-        // Draw expression
-        if (detection.expressions) {
-          const expressions =
-            detection.expressions;
-
-          const sortedExpressions =
-            Object.entries(expressions).sort(
-              (a, b) => b[1] - a[1]
-            );
-
-          const topExpression =
-            sortedExpressions[0];
-
-          if (topExpression) {
-            const expressionName =
-              topExpression[0];
-
-            const expressionConfidence =
-              Math.round(
-                topExpression[1] * 100
-              );
-
-            ctx.font =
-              "bold 14px Arial";
-
-            ctx.fillStyle =
-              "#00ff88";
-
-            ctx.fillText(
-              `${expressionName} ${expressionConfidence}%`,
-              box.x,
-              box.y + box.height + 20
-            );
-          }
-        }
-      });
+      );
     } catch (err) {
       console.error(
-        "Video processing error:",
+        "FACE DETECTION ERROR:",
         err
       );
     } finally {
+      detectionRunning.current = false;
       setIsProcessing(false);
     }
-  };
-
-  // ============================================================
-  // START VIDEO PROCESSING
-  // ============================================================
-
-  useEffect(() => {
-    if (
-      !isCameraOn ||
-      !isModelLoaded
-    ) {
-      return;
-    }
-
-    const interval = setInterval(
-      processVideo,
-      150
-    );
-
-    return () => {
-      clearInterval(interval);
-    };
   }, [
-    isCameraOn,
-    isModelLoaded,
+    cameraOn,
+    cameraReady,
+    modelsLoaded,
     confidence,
   ]);
 
   // ============================================================
-  // TOGGLE CAMERA
+  // DETECTION LOOP
   // ============================================================
 
-  const toggleCamera = () => {
-    setError(null);
-    setDetections([]);
-    setCapturedImage(null);
+  useEffect(() => {
+    if (
+      !cameraOn ||
+      !cameraReady ||
+      !modelsLoaded
+    ) {
+      return;
+    }
 
-    setIsCameraOn(
-      (current) => !current
-    );
+    let stopped = false;
+
+    const runLoop = async () => {
+      if (stopped) return;
+
+      await detectFaces();
+
+      if (!stopped) {
+        timerRef.current = setTimeout(
+          runLoop,
+          400
+        );
+      }
+    };
+
+    runLoop();
+
+    return () => {
+      stopped = true;
+
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+
+      detectionRunning.current = false;
+    };
+  }, [
+    cameraOn,
+    cameraReady,
+    modelsLoaded,
+    detectFaces,
+  ]);
+
+  // ============================================================
+  // START CAMERA
+  // ============================================================
+
+  const startCamera = () => {
+    setError("");
+
+    if (!modelsLoaded) {
+      setError(
+        "Please wait until the AI models finish loading."
+      );
+
+      return;
+    }
+
+    setCameraReady(false);
+    setCameraOn(true);
+  };
+
+  // ============================================================
+  // STOP CAMERA
+  // ============================================================
+
+  const stopCamera = () => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+
+    detectionRunning.current = false;
+
+    setIsProcessing(false);
+    setCameraReady(false);
+    setCameraOn(false);
+    setDetections([]);
   };
 
   // ============================================================
@@ -248,32 +377,58 @@ function App() {
   // ============================================================
 
   const captureImage = () => {
+    if (!cameraOn) {
+      setError(
+        "Please start the camera first."
+      );
+
+      return;
+    }
+
+    if (!cameraReady) {
+      setError(
+        "Camera is still starting. Please wait a moment."
+      );
+
+      return;
+    }
+
     if (!webcamRef.current) {
       setError(
-        "Camera is not available."
+        "Webcam is not available."
       );
+
       return;
     }
 
-    if (detections.length === 0) {
-      setError(
-        "No face detected. Please position your face in front of the camera."
-      );
-      return;
-    }
-
-    const imageSrc =
+    const image =
       webcamRef.current.getScreenshot();
 
-    if (!imageSrc) {
+    if (!image) {
       setError(
-        "Unable to capture image."
+        "Could not capture the camera image."
       );
+
       return;
     }
 
-    setCapturedImage(imageSrc);
-    setError(null);
+    setCapturedImage(image);
+
+    // Save current AI results.
+    setCapturedDetections(
+      detections.map((detection) => ({
+        age: detection.age,
+        gender: detection.gender,
+        genderProbability:
+          detection.genderProbability,
+        confidence:
+          detection.detection.score,
+      }))
+    );
+
+    setError("");
+
+    console.log("IMAGE CAPTURED");
   };
 
   // ============================================================
@@ -281,19 +436,19 @@ function App() {
   // ============================================================
 
   const downloadImage = () => {
-    if (!capturedImage) {
-      return;
-    }
+    if (!capturedImage) return;
 
     const link =
       document.createElement("a");
 
-    link.download =
-      "face-detection.jpg";
-
     link.href = capturedImage;
+    link.download = "face-analysis.jpg";
+
+    document.body.appendChild(link);
 
     link.click();
+
+    document.body.removeChild(link);
   };
 
   // ============================================================
@@ -301,38 +456,39 @@ function App() {
   // ============================================================
 
   const resetApp = () => {
-    setIsCameraOn(false);
-    setDetections([]);
-    setCapturedImage(null);
-    setError(null);
-    setShowSettings(false);
-
-    if (canvasRef.current) {
-      const ctx =
-        canvasRef.current.getContext(
-          "2d"
-        );
-
-      ctx.clearRect(
-        0,
-        0,
-        canvasRef.current.width,
-        canvasRef.current.height
-      );
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
     }
+
+    detectionRunning.current = false;
+
+    setCameraReady(false);
+    setCameraOn(false);
+
+    setDetections([]);
+    setCapturedDetections([]);
+
+    setCapturedImage(null);
+
+    setError("");
+
+    setShowSettings(false);
   };
 
   // ============================================================
-  // CAMERA CONSTRAINTS
+  // VIDEO SETTINGS
   // ============================================================
 
   const videoConstraints = {
     width: {
       ideal: 1280,
     },
+
     height: {
       ideal: 720,
     },
+
     facingMode: "user",
   };
 
@@ -353,41 +509,51 @@ function App() {
 
           <div className="brand">
 
-            <img
-              src={logo}
-              alt="eTouchUS Face Recognition"
-              className="logo"
-            />
+            <div className="logo-container">
+
+              <img
+                src={logo}
+                alt="eTouchUS"
+                className="logo"
+              />
+
+            </div>
 
             <div className="brand-text">
 
               <h1>
-                AI Face Detector
+                AI Face & Health Analyzer
               </h1>
 
               <p>
-                Real-time face detection,
-                age estimation and gender
-                recognition
+                Real-time facial analysis and health monitoring
               </p>
 
             </div>
 
           </div>
 
-          <div className="system-status">
+          <div
+            className={
+              `model-status ${
+                modelsLoaded
+                  ? "ready"
+                  : "loading"
+              }`
+            }
+          >
 
-            <span
-              className={
-                isModelLoaded
-                  ? "status-dot online"
-                  : "status-dot"
-              }
-            />
+            {modelsLoaded ? (
+              <CheckCircle size={17} />
+            ) : (
+              <Brain size={17} />
+            )}
 
-            {isModelLoaded
-              ? "AI Model Ready"
-              : "Loading AI Model..."}
+            <span>
+              {modelsLoaded
+                ? "AI Model Ready"
+                : "Loading AI Model..."}
+            </span>
 
           </div>
 
@@ -395,689 +561,848 @@ function App() {
 
       </header>
 
+
       {/* ======================================================
           MAIN
       ====================================================== */}
 
       <main className="main">
 
-        {/* ====================================================
-            TOP CONTROL BAR
-        ==================================================== */}
+        {/* TITLE */}
 
-        <div className="top-bar">
+        <section className="page-title">
 
-          <div className="page-title">
+          <div>
 
-            <div className="title-icon">
-              <ScanFace
-                size={25}
-              />
-            </div>
-
-            <div>
-              <h2>
-                Face Recognition
-              </h2>
-
-              <p>
-                AI-powered facial analysis
-              </p>
-            </div>
-
-          </div>
-
-          <div className="controls">
-
-            <button
-              onClick={toggleCamera}
-              className={`control-btn ${
-                isCameraOn
-                  ? "danger"
-                  : "primary"
-              }`}
-              disabled={!isModelLoaded}
-            >
-
-              {isCameraOn ? (
-                <CameraOff size={19} />
-              ) : (
-                <Camera size={19} />
-              )}
-
-              {isCameraOn
-                ? "Stop Camera"
-                : "Start Camera"}
-
-            </button>
-
-            {isCameraOn && (
-              <>
-
-                <button
-                  onClick={captureImage}
-                  className="control-btn secondary"
-                  disabled={
-                    detections.length === 0
-                  }
-                >
-                  <Camera size={19} />
-                  Capture
-                </button>
-
-                <button
-                  onClick={() =>
-                    setShowSettings(
-                      !showSettings
-                    )
-                  }
-                  className="control-btn secondary"
-                >
-                  <Settings size={19} />
-                  Settings
-                </button>
-
-                <button
-                  onClick={resetApp}
-                  className="control-btn secondary"
-                >
-                  <RotateCcw
-                    size={19}
-                  />
-                  Reset
-                </button>
-
-              </>
-            )}
-
-          </div>
-
-        </div>
-
-        {/* ====================================================
-            SETTINGS
-        ==================================================== */}
-
-        {showSettings && (
-          <div className="settings-panel">
-
-            <div>
-              <h3>
-                Detection Settings
-              </h3>
-
-              <p>
-                Adjust face detection
-                confidence threshold.
-              </p>
-            </div>
-
-            <div className="setting-item">
-
-              <label>
-                Confidence Threshold:
-                <strong>
-                  {Math.round(
-                    confidence * 100
-                  )}
-                  %
-                </strong>
-              </label>
-
-              <input
-                type="range"
-                min="0.1"
-                max="0.9"
-                step="0.1"
-                value={confidence}
-                onChange={(e) =>
-                  setConfidence(
-                    parseFloat(
-                      e.target.value
-                    )
-                  )
-                }
-              />
-
-            </div>
-
-          </div>
-        )}
-
-        {/* ====================================================
-            ERROR
-        ==================================================== */}
-
-        {error && (
-          <div className="error-message">
-
-            <strong>
-              ⚠️ Error
-            </strong>
+            <h2>
+              Facial Recognition & Health
+            </h2>
 
             <p>
-              {error}
-            </p>
-
-          </div>
-        )}
-
-        {/* ====================================================
-            LOADING
-        ==================================================== */}
-
-        {!isModelLoaded && !error && (
-          <div className="loading">
-
-            <div className="loading-spinner" />
-
-            <p>
-              Loading AI models...
-            </p>
-
-            <small>
-              Please wait
-            </small>
-
-          </div>
-        )}
-
-        {/* ====================================================
-            CONTENT GRID
-        ==================================================== */}
-
-        <div className="content-grid">
-
-          {/* ==================================================
-              CAMERA CARD
-          ================================================== */}
-
-          <section className="camera-card">
-
-            <div className="card-header">
-
-              <div>
-
-                <h2>
-                  Live Camera
-                </h2>
-
-                <p>
-                  Position your face
-                  inside the camera
-                </p>
-
-              </div>
-
-              <div
-                className={`face-status ${
-                  detections.length > 0
-                    ? "detected"
-                    : ""
-                }`}
-              >
-
-                <User size={17} />
-
-                {detections.length > 0
-                  ? `${detections.length} Face${
-                      detections.length > 1
-                        ? "s"
-                        : ""
-                    }`
-                  : "No Face"}
-
-              </div>
-
-            </div>
-
-            {/* CAMERA */}
-
-            <div className="camera-container">
-
-              {isCameraOn ? (
-
-                <div className="video-wrapper">
-
-                  <Webcam
-                    ref={webcamRef}
-                    audio={false}
-                    mirrored={true}
-                    screenshotFormat="image/jpeg"
-                    videoConstraints={
-                      videoConstraints
-                    }
-                    className="webcam"
-                  />
-
-                  <canvas
-                    ref={canvasRef}
-                    className="detection-canvas"
-                  />
-
-                  {/* Scanner corners */}
-
-                  <div className="scan-frame">
-
-                    <span className="corner top-left" />
-                    <span className="corner top-right" />
-                    <span className="corner bottom-left" />
-                    <span className="corner bottom-right" />
-
-                  </div>
-
-                  {/* Camera status */}
-
-                  <div className="camera-status">
-
-                    {detections.length > 0 ? (
-                      <>
-                        <span className="live-dot" />
-                        Face detected
-                      </>
-                    ) : (
-                      <>
-                        <span className="search-dot" />
-                        Searching for face...
-                      </>
-                    )}
-
-                  </div>
-
-                  {isProcessing && (
-                    <div className="processing-overlay">
-
-                      <div className="processing-spinner" />
-
-                      <span>
-                        Processing...
-                      </span>
-
-                    </div>
-                  )}
-
-                </div>
-
-              ) : (
-
-                <div className="camera-placeholder">
-
-                  <div className="placeholder-icon">
-                    <Camera size={55} />
-                  </div>
-
-                  <h3>
-                    Camera is off
-                  </h3>
-
-                  <p>
-                    Click "Start Camera"
-                    to begin face detection.
-                  </p>
-
-                  <button
-                    onClick={toggleCamera}
-                    disabled={!isModelLoaded}
-                    className="placeholder-button"
-                  >
-                    <Camera size={18} />
-                    Start Camera
-                  </button>
-
-                </div>
-
-              )}
-
-            </div>
-
-          </section>
-
-          {/* ==================================================
-              RESULTS CARD
-          ================================================== */}
-
-          <section className="results-card">
-
-            <div className="card-header">
-
-              <div>
-
-                <h2>
-                  Detection Results
-                </h2>
-
-                <p>
-                  AI facial analysis
-                </p>
-
-              </div>
-
-              <Activity
-                size={24}
-              />
-
-            </div>
-
-            {detections.length === 0 ? (
-
-              <div className="empty-results">
-
-                <div className="empty-icon">
-                  <ScanFace
-                    size={35}
-                  />
-                </div>
-
-                <h3>
-                  No face detected
-                </h3>
-
-                <p>
-                  Start the camera and
-                  position a face in view
-                  to see AI analysis.
-                </p>
-
-              </div>
-
-            ) : (
-
-              <div className="results-list">
-
-                {detections.map(
-                  (detection, index) => {
-
-                    const expressions =
-                      detection.expressions;
-
-                    const sortedExpressions =
-                      expressions
-                        ? Object.entries(
-                            expressions
-                          ).sort(
-                            (a, b) =>
-                              b[1] - a[1]
-                          )
-                        : [];
-
-                    const expression =
-                      sortedExpressions[0];
-
-                    return (
-                      <div
-                        className="detection-card"
-                        key={index}
-                      >
-
-                        <div className="detection-card-header">
-
-                          <div className="face-number">
-
-                            <User
-                              size={19}
-                            />
-
-                            Face {index + 1}
-
-                          </div>
-
-                          <span className="detected-badge">
-                            Detected
-                          </span>
-
-                        </div>
-
-                        <div className="result-grid">
-
-                          <div className="result-item">
-
-                            <span>
-                              Age
-                            </span>
-
-                            <strong>
-                              {Math.round(
-                                detection.age
-                              )}{" "}
-                              years
-                            </strong>
-
-                          </div>
-
-                          <div className="result-item">
-
-                            <span>
-                              Gender
-                            </span>
-
-                            <strong>
-                              {detection.gender}
-                            </strong>
-
-                          </div>
-
-                          <div className="result-item">
-
-                            <span>
-                              Confidence
-                            </span>
-
-                            <strong>
-                              {Math.round(
-                                detection.genderProbability *
-                                  100
-                              )}
-                              %
-                            </strong>
-
-                          </div>
-
-                          <div className="result-item">
-
-                            <span>
-                              Expression
-                            </span>
-
-                            <strong>
-                              {expression
-                                ? expression[0]
-                                : "Unknown"}
-                            </strong>
-
-                          </div>
-
-                        </div>
-
-                        {/* Expression probabilities */}
-
-                        {expressions && (
-                          <div className="expressions">
-
-                            <h4>
-                              Expressions
-                            </h4>
-
-                            {Object.entries(
-                              expressions
-                            ).map(
-                              (
-                                [
-                                  name,
-                                  value,
-                                ]
-                              ) => (
-                                <div
-                                  className="expression-row"
-                                  key={name}
-                                >
-
-                                  <span>
-                                    {name}
-                                  </span>
-
-                                  <div className="expression-bar">
-
-                                    <div
-                                      className="expression-fill"
-                                      style={{
-                                        width: `${
-                                          value *
-                                          100
-                                        }%`,
-                                      }}
-                                    />
-
-                                  </div>
-
-                                  <strong>
-                                    {Math.round(
-                                      value *
-                                        100
-                                    )}
-                                    %
-                                  </strong>
-
-                                </div>
-                              )
-                            )}
-
-                          </div>
-                        )}
-
-                      </div>
-                    );
-                  }
-                )}
-
-              </div>
-
-            )}
-
-          </section>
-
-        </div>
-
-        {/* ====================================================
-            CAPTURED IMAGE
-        ==================================================== */}
-
-        {capturedImage && (
-          <section className="captured-section">
-
-            <div className="section-heading">
-
-              <div>
-                <h2>
-                  Captured Image
-                </h2>
-
-                <p>
-                  Face capture from camera
-                </p>
-              </div>
-
-              <button
-                onClick={
-                  downloadImage
-                }
-                className="control-btn primary"
-              >
-                <Download size={18} />
-                Download
-              </button>
-
-            </div>
-
-            <div className="captured-content">
-
-              <img
-                src={capturedImage}
-                alt="Captured face"
-                className="captured-image"
-              />
-
-            </div>
-
-          </section>
-        )}
-
-        {/* ====================================================
-            FEATURES
-        ==================================================== */}
-
-        <section className="features">
-
-          <div className="feature-card">
-
-            <div className="feature-icon">
-              <ScanFace size={25} />
-            </div>
-
-            <h3>
-              Face Detection
-            </h3>
-
-            <p>
-              Real-time face detection
-              using AI.
-            </p>
-
-          </div>
-
-          <div className="feature-card">
-
-            <div className="feature-icon">
-              <User size={25} />
-            </div>
-
-            <h3>
-              Age Estimation
-            </h3>
-
-            <p>
-              AI-based estimated age
-              analysis.
-            </p>
-
-          </div>
-
-          <div className="feature-card">
-
-            <div className="feature-icon">
-              <Activity size={25} />
-            </div>
-
-            <h3>
-              Expression Analysis
-            </h3>
-
-            <p>
-              Detect facial expressions
-              in real time.
-            </p>
-
-          </div>
-
-          <div className="feature-card">
-
-            <div className="feature-icon">
-              <Settings size={25} />
-            </div>
-
-            <h3>
-              Adjustable Detection
-            </h3>
-
-            <p>
-              Configure AI confidence
-              threshold.
+              Analyze facial attributes and connect
+              validated health measurement systems.
             </p>
 
           </div>
 
         </section>
 
+
+        {/* ====================================================
+            CONTROLS
+        ==================================================== */}
+
+        <section className="control-section">
+
+          <div className="controls">
+
+            {!cameraOn ? (
+
+              <button
+                className="control-btn primary"
+                onClick={startCamera}
+                disabled={!modelsLoaded}
+              >
+
+                <Camera size={19} />
+
+                Start Camera
+
+              </button>
+
+            ) : (
+
+              <button
+                className="control-btn danger"
+                onClick={stopCamera}
+              >
+
+                <CameraOff size={19} />
+
+                Stop Camera
+
+              </button>
+
+            )}
+
+
+            <button
+              className="control-btn secondary"
+              onClick={captureImage}
+              disabled={!cameraReady}
+            >
+
+              <Camera size={19} />
+
+              Capture
+
+            </button>
+
+
+            <button
+              className="control-btn secondary"
+              onClick={() =>
+                setShowSettings(
+                  (value) => !value
+                )
+              }
+            >
+
+              <Settings size={19} />
+
+              Settings
+
+            </button>
+
+
+            <button
+              className="control-btn secondary"
+              onClick={resetApp}
+            >
+
+              <RotateCcw size={19} />
+
+              Reset
+
+            </button>
+
+          </div>
+
+
+          {/* SETTINGS */}
+
+          {showSettings && (
+
+            <div className="settings-panel">
+
+              <div className="settings-title">
+
+                <Settings size={18} />
+
+                <h3>
+                  Detection Settings
+                </h3>
+
+              </div>
+
+              <div className="setting-item">
+
+                <div className="setting-label">
+
+                  <span>
+                    Confidence Threshold
+                  </span>
+
+                  <strong>
+                    {Math.round(
+                      confidence * 100
+                    )}%
+                  </strong>
+
+                </div>
+
+                <input
+                  type="range"
+                  min="0.1"
+                  max="0.9"
+                  step="0.1"
+                  value={confidence}
+                  onChange={(e) =>
+                    setConfidence(
+                      Number(e.target.value)
+                    )
+                  }
+                />
+
+                <div className="range-labels">
+
+                  <span>
+                    More sensitive
+                  </span>
+
+                  <span>
+                    More accurate
+                  </span>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          )}
+
+        </section>
+
+
+        {/* ====================================================
+            ERROR
+        ==================================================== */}
+
+        {error && (
+
+          <div className="error-message">
+
+            <AlertCircle size={20} />
+
+            <div>
+
+              <strong>
+                Error
+              </strong>
+
+              <p>
+                {error}
+              </p>
+
+            </div>
+
+          </div>
+
+        )}
+
+
+        {/* ====================================================
+            CAMERA
+        ==================================================== */}
+
+        <section className="camera-card">
+
+          <div className="camera-header">
+
+            <div>
+
+              <h3>
+                Camera
+              </h3>
+
+              <p>
+                Position your face in front of the camera.
+              </p>
+
+            </div>
+
+            <div
+              className={
+                `camera-indicator ${
+                  cameraReady
+                    ? "active"
+                    : ""
+                }`
+              }
+            >
+
+              <span></span>
+
+              {cameraReady
+                ? "Live"
+                : cameraOn
+                ? "Starting..."
+                : "Offline"}
+
+            </div>
+
+          </div>
+
+
+          <div className="camera-container">
+
+            {cameraOn ? (
+
+              <div className="video-wrapper">
+
+                <Webcam
+                  ref={webcamRef}
+                  audio={false}
+                  mirrored={true}
+                  screenshotFormat="image/jpeg"
+                  videoConstraints={
+                    videoConstraints
+                  }
+                  className="webcam"
+                  onUserMedia={
+                    handleCameraSuccess
+                  }
+                  onUserMediaError={
+                    handleCameraError
+                  }
+                />
+
+                <canvas
+                  ref={canvasRef}
+                  className="detection-canvas"
+                />
+
+                <div className="scan-frame">
+
+                  <span className="corner top-left"></span>
+
+                  <span className="corner top-right"></span>
+
+                  <span className="corner bottom-left"></span>
+
+                  <span className="corner bottom-right"></span>
+
+                </div>
+
+                {isProcessing && (
+
+                  <div className="processing-overlay">
+
+                    <div className="processing-spinner"></div>
+
+                    <span>
+                      AI scanning...
+                    </span>
+
+                  </div>
+
+                )}
+
+              </div>
+
+            ) : (
+
+              <div className="camera-placeholder">
+
+                <div className="placeholder-icon">
+
+                  <Camera size={55} />
+
+                </div>
+
+                <h3>
+                  Camera is Off
+                </h3>
+
+                <p>
+                  Click "Start Camera" to begin
+                  face detection.
+                </p>
+
+              </div>
+
+            )}
+
+          </div>
+
+        </section>
+
+
+        {/* ====================================================
+            LIVE DETECTION
+        ==================================================== */}
+
+        {detections.length > 0 && (
+
+          <section className="detections-panel">
+
+            <div className="section-heading">
+
+              <div>
+
+                <h3>
+                  Detection Results
+                </h3>
+
+                <p>
+                  {detections.length} face
+                  {detections.length > 1
+                    ? "s"
+                    : ""} detected
+                </p>
+
+              </div>
+
+              <div className="detection-status">
+
+                <Activity size={17} />
+
+                Live Detection
+
+              </div>
+
+            </div>
+
+
+            <div className="detections-grid">
+
+              {detections.map(
+                (detection, index) => {
+
+                  const age =
+                    Math.round(
+                      detection.age
+                    );
+
+                  const gender =
+                    detection.gender;
+
+                  const genderProbability =
+                    Math.round(
+                      detection.genderProbability *
+                      100
+                    );
+
+                  const score =
+                    Math.round(
+                      detection.detection.score *
+                      100
+                    );
+
+                  return (
+
+                    <div
+                      className="detection-card"
+                      key={index}
+                    >
+
+                      <div className="face-card-header">
+
+                        <div className="face-icon">
+
+                          <UserRound size={22} />
+
+                        </div>
+
+                        <div>
+
+                          <h4>
+                            Face {index + 1}
+                          </h4>
+
+                          <span>
+                            Detected
+                          </span>
+
+                        </div>
+
+                      </div>
+
+                      <div className="detection-info">
+
+                        <div className="info-item">
+
+                          <span className="label">
+                            Estimated Age
+                          </span>
+
+                          <span className="value">
+                            {age} years
+                          </span>
+
+                        </div>
+
+                        <div className="info-item">
+
+                          <span className="label">
+                            Gender
+                          </span>
+
+                          <span className="value">
+                            {gender}
+                          </span>
+
+                        </div>
+
+                        <div className="info-item">
+
+                          <span className="label">
+                            Gender Confidence
+                          </span>
+
+                          <span className="value">
+                            {genderProbability}%
+                          </span>
+
+                        </div>
+
+                        <div className="info-item">
+
+                          <span className="label">
+                            Face Confidence
+                          </span>
+
+                          <span className="value">
+                            {score}%
+                          </span>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+
+                  );
+                }
+              )}
+
+            </div>
+
+          </section>
+
+        )}
+
+
+        {/* ====================================================
+            CAPTURED IMAGE
+        ==================================================== */}
+
+        {capturedImage && (
+
+          <section className="captured-section">
+
+            <div className="section-heading">
+
+              <div>
+
+                <h3>
+                  Captured Image
+                </h3>
+
+                <p>
+                  This image was captured manually.
+                </p>
+
+              </div>
+
+              <div className="detection-status">
+
+                <CheckCircle size={17} />
+
+                Captured
+
+              </div>
+
+            </div>
+
+
+            <div className="captured-content">
+
+              <div className="captured-image-wrapper">
+
+                <img
+                  src={capturedImage}
+                  alt="Captured face"
+                  className="captured-image"
+                />
+
+              </div>
+
+
+              <div className="captured-results">
+
+                <h4>
+                  Captured Analysis
+                </h4>
+
+                {capturedDetections.length === 0 ? (
+
+                  <p>
+                    No face was detected at the
+                    moment of capture.
+                  </p>
+
+                ) : (
+
+                  capturedDetections.map(
+                    (detection, index) => (
+
+                      <div
+                        className="captured-result-card"
+                        key={index}
+                      >
+
+                        <strong>
+                          Face {index + 1}
+                        </strong>
+
+                        <span>
+                          Age:{" "}
+                          {Math.round(
+                            detection.age
+                          )} years
+                        </span>
+
+                        <span>
+                          Gender:{" "}
+                          {detection.gender}
+                        </span>
+
+                        <span>
+                          Face confidence:{" "}
+                          {Math.round(
+                            detection.confidence *
+                            100
+                          )}%
+                        </span>
+
+                      </div>
+
+                    )
+                  )
+
+                )}
+
+
+                <button
+                  className="control-btn primary"
+                  onClick={
+                    downloadImage
+                  }
+                >
+
+                  <Download size={19} />
+
+                  Download Image
+
+                </button>
+
+              </div>
+
+            </div>
+
+          </section>
+
+        )}
+
+
+        {/* ====================================================
+            HEALTH DASHBOARD
+        ==================================================== */}
+
+        <section className="health-section">
+
+          <div className="section-heading">
+
+            <div>
+
+              <h3>
+                Health Monitoring
+              </h3>
+
+              <p>
+                Vital-sign measurements require
+                validated algorithms or physical sensors.
+              </p>
+
+            </div>
+
+            <div className="health-disclaimer">
+
+              <ShieldCheck size={16} />
+
+              Measurement status
+
+            </div>
+
+          </div>
+
+
+          <div className="health-grid">
+
+            {/* HEART RATE */}
+
+            <div className="health-card">
+
+              <div className="health-card-top">
+
+                <div className="health-icon">
+
+                  <HeartPulse size={25} />
+
+                </div>
+
+                <span className="health-status">
+                  Not measured
+                </span>
+
+              </div>
+
+              <div className="health-card-title">
+                Heart Rate
+              </div>
+
+              <div className="health-value">
+
+                {heartRate ?? "--"}
+
+                <small>
+                  BPM
+                </small>
+
+              </div>
+
+              <p className="health-description">
+                Requires validated rPPG or a
+                heart-rate sensor.
+              </p>
+
+              <div className="measurement-message">
+
+                <Activity size={15} />
+
+                Ready for rPPG integration
+
+              </div>
+
+            </div>
+
+
+            {/* SPO2 */}
+
+            <div className="health-card">
+
+              <div className="health-card-top">
+
+                <div className="health-icon">
+
+                  <Droplets size={25} />
+
+                </div>
+
+                <span className="health-status">
+                  Waiting for sensor
+                </span>
+
+              </div>
+
+              <div className="health-card-title">
+                Blood Oxygen
+              </div>
+
+              <div className="health-value">
+
+                {spo2 ?? "--"}
+
+                <small>
+                  %
+                </small>
+
+              </div>
+
+              <p className="health-description">
+                Requires a validated SpO₂
+                sensor or approved model.
+              </p>
+
+              <div className="measurement-message">
+
+                <Info size={15} />
+
+                Sensor required
+
+              </div>
+
+            </div>
+
+
+            {/* BLOOD PRESSURE */}
+
+            <div className="health-card">
+
+              <div className="health-card-top">
+
+                <div className="health-icon">
+
+                  <Stethoscope size={25} />
+
+                </div>
+
+                <span className="health-status">
+                  Waiting for sensor
+                </span>
+
+              </div>
+
+              <div className="health-card-title">
+                Blood Pressure
+              </div>
+
+              <div className="bp-values">
+
+                <div>
+
+                  <strong>
+                    {bloodPressure.systolic ?? "--"}
+                  </strong>
+
+                  <span>
+                    SYS
+                  </span>
+
+                </div>
+
+                <div className="bp-slash">
+                  /
+                </div>
+
+                <div>
+
+                  <strong>
+                    {bloodPressure.diastolic ?? "--"}
+                  </strong>
+
+                  <span>
+                    DIA
+                  </span>
+
+                </div>
+
+                <div className="bp-unit">
+                  mmHg
+                </div>
+
+              </div>
+
+              <p className="health-description">
+                Requires a validated blood-pressure
+                monitor or approved measurement system.
+              </p>
+
+              <div className="measurement-message">
+
+                <Info size={15} />
+
+                BP sensor required
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        {/* ====================================================
+            MEDICAL NOTICE
+        ==================================================== */}
+
+        <div className="medical-notice">
+
+          <ShieldCheck size={20} />
+
+          <div>
+
+            <strong>
+              Measurement Notice
+            </strong>
+
+            <p>
+              Heart rate, SpO₂ and blood-pressure
+              values are not generated by face-api.js.
+              These features require validated algorithms
+              or physical sensors. Do not use placeholder
+              values for diagnosis or medical decisions.
+            </p>
+
+          </div>
+
+        </div>
+
       </main>
+
 
       {/* ======================================================
           FOOTER
@@ -1085,22 +1410,27 @@ function App() {
 
       <footer className="footer">
 
-        <div className="footer-brand">
+        <div className="footer-content">
 
           <img
             src={logo}
             alt="eTouchUS"
+            className="footer-logo"
           />
 
-          <span>
-            eTouchUS AI Face Recognition
-          </span>
+          <div>
+
+            <strong>
+              eTouchUS AI Face & Health Analyzer
+            </strong>
+
+            <p>
+              Powered by eTouchUS
+            </p>
+
+          </div>
 
         </div>
-
-        <p>
-          Powered by React & face-api.js
-        </p>
 
       </footer>
 
