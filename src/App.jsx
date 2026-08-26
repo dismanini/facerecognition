@@ -802,6 +802,166 @@ function App() {
 
         </section>
 
+
+        {/* ====================================================
+            DETECTION SUMMARY
+        ==================================================== */}
+
+        {detections.length > 0 && (
+
+          <section className="detections-panel">
+
+            <div className="section-heading">
+
+              <div>
+
+                <h3>
+                  Detection Results
+                </h3>
+
+                <p>
+                  {detections.length}
+                  {' '}
+                  face
+                  {detections.length > 1
+                    ? 's'
+                    : ''}
+                  detected
+                </p>
+
+              </div>
+
+              <div className="detection-status">
+
+                <Activity size={18} />
+
+                Live Detection
+
+              </div>
+
+            </div>
+
+            <div className="detections-grid">
+
+              {detections.map(
+                (detection, index) => {
+
+                  const age =
+                    Math.round(
+                      detection.age
+                    )
+
+                  const gender =
+                    detection.gender
+
+                  const genderProbability =
+                    Math.round(
+                      detection.genderProbability *
+                      100
+                    )
+
+                  const faceConfidence =
+                    Math.round(
+                      detection.detection.score *
+                      100
+                    )
+
+                  return (
+
+                    <div
+                      key={index}
+                      className="detection-card"
+                    >
+
+                      <div className="face-card-header">
+
+                        <div className="face-icon">
+
+                          <UserRound
+                            size={22}
+                          />
+
+                        </div>
+
+                        <div>
+
+                          <h4>
+                            Face {index + 1}
+                          </h4>
+
+                          <span>
+                            Detected
+                          </span>
+
+                        </div>
+
+                      </div>
+
+                      <div className="detection-info">
+
+                        <div className="info-item">
+
+                          <span className="label">
+                            Estimated Age
+                          </span>
+
+                          <span className="value">
+                            {age} years
+                          </span>
+
+                        </div>
+
+                        <div className="info-item">
+
+                          <span className="label">
+                            Gender
+                          </span>
+
+                          <span className="value">
+                            {gender}
+                          </span>
+
+                        </div>
+
+                        <div className="info-item">
+
+                          <span className="label">
+                            Gender Confidence
+                          </span>
+
+                          <span className="value">
+                            {genderProbability}%
+                          </span>
+
+                        </div>
+
+                        <div className="info-item">
+
+                          <span className="label">
+                            Face Confidence
+                          </span>
+
+                          <span className="value">
+                            {faceConfidence}%
+                          </span>
+
+                        </div>
+
+                      </div>
+
+                    </div>
+                  )
+                }
+              )}
+
+            </div>
+
+          </section>
+
+        )}
+
+
+        
         {/* ====================================================
             HEALTH DASHBOARD
         ==================================================== */}
@@ -1012,163 +1172,6 @@ function App() {
           </div>
 
         </section>
-
-        {/* ====================================================
-            DETECTION SUMMARY
-        ==================================================== */}
-
-        {detections.length > 0 && (
-
-          <section className="detections-panel">
-
-            <div className="section-heading">
-
-              <div>
-
-                <h3>
-                  Detection Results
-                </h3>
-
-                <p>
-                  {detections.length}
-                  {' '}
-                  face
-                  {detections.length > 1
-                    ? 's'
-                    : ''}
-                  detected
-                </p>
-
-              </div>
-
-              <div className="detection-status">
-
-                <Activity size={18} />
-
-                Live Detection
-
-              </div>
-
-            </div>
-
-            <div className="detections-grid">
-
-              {detections.map(
-                (detection, index) => {
-
-                  const age =
-                    Math.round(
-                      detection.age
-                    )
-
-                  const gender =
-                    detection.gender
-
-                  const genderProbability =
-                    Math.round(
-                      detection.genderProbability *
-                      100
-                    )
-
-                  const faceConfidence =
-                    Math.round(
-                      detection.detection.score *
-                      100
-                    )
-
-                  return (
-
-                    <div
-                      key={index}
-                      className="detection-card"
-                    >
-
-                      <div className="face-card-header">
-
-                        <div className="face-icon">
-
-                          <UserRound
-                            size={22}
-                          />
-
-                        </div>
-
-                        <div>
-
-                          <h4>
-                            Face {index + 1}
-                          </h4>
-
-                          <span>
-                            Detected
-                          </span>
-
-                        </div>
-
-                      </div>
-
-                      <div className="detection-info">
-
-                        <div className="info-item">
-
-                          <span className="label">
-                            Estimated Age
-                          </span>
-
-                          <span className="value">
-                            {age} years
-                          </span>
-
-                        </div>
-
-                        <div className="info-item">
-
-                          <span className="label">
-                            Gender
-                          </span>
-
-                          <span className="value">
-                            {gender}
-                          </span>
-
-                        </div>
-
-                        <div className="info-item">
-
-                          <span className="label">
-                            Gender Confidence
-                          </span>
-
-                          <span className="value">
-                            {genderProbability}%
-                          </span>
-
-                        </div>
-
-                        <div className="info-item">
-
-                          <span className="label">
-                            Face Confidence
-                          </span>
-
-                          <span className="value">
-                            {faceConfidence}%
-                          </span>
-
-                        </div>
-
-                      </div>
-
-                    </div>
-                  )
-                }
-              )}
-
-            </div>
-
-          </section>
-
-        )}
 
         {/* ====================================================
             CAPTURED IMAGE
