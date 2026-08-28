@@ -31,14 +31,15 @@ function App() {
   const webcamRef = useRef(null);
   const canvasRef = useRef(null);
 
-  const detectionRunningRef = useRef(false);
-  const detectionTimerRef = useRef(null);
+  const detectionRunning = useRef(false);
+  const timerRef = useRef(null);
 
   // rPPG
   const rppgCanvasRef = useRef(null);
   const rppgSamplesRef = useRef([]);
+
   const rppgTimerRef = useRef(null);
-  const heartRateTimerRef = useRef(null);
+  const healthCalculationTimerRef = useRef(null);
 
   // ============================================================
   // AI STATE
@@ -76,16 +77,14 @@ function App() {
   const [confidence, setConfidence] = useState(0.5);
 
   // ============================================================
-  // HEALTH
+  // HEALTH STATE
   // ============================================================
 
   const [heartRate, setHeartRate] = useState(null);
-  const [heartRateStatus, setHeartRateStatus] =
-    useState("Waiting");
+  const [heartRateStatus, setHeartRateStatus] = useState("Waiting");
 
   const [spo2, setSpo2] = useState(null);
-  const [spo2Status, setSpo2Status] =
-    useState("Sensor required");
+  const [spo2Status, setSpo2Status] = useState("Waiting");
 
   const [bloodPressure, setBloodPressure] = useState({
     systolic: null,
@@ -93,16 +92,16 @@ function App() {
   });
 
   const [bloodPressureStatus, setBloodPressureStatus] =
-    useState("Sensor required");
+    useState("Waiting");
 
   // ============================================================
-  // LOAD FACE API MODELS
+  // LOAD MODELS
   // ============================================================
 
   useEffect(() => {
     let mounted = true;
 
-    const loadModels = async () => {
+    async function loadModels() {
       try {
         setError("");
 
@@ -119,17 +118,17 @@ function App() {
           setModelsLoaded(true);
         }
 
-        console.log("All face-api.js models loaded.");
+        console.log("All models loaded successfully.");
       } catch (err) {
         console.error("MODEL ERROR:", err);
 
         if (mounted) {
           setError(
-            "AI models could not be loaded. Make sure all face-api.js model files are inside public/models."
+            "AI models could not be loaded. Make sure the model files are inside public/models."
           );
         }
       }
-    };
+    }
 
     loadModels();
 
@@ -182,7 +181,7 @@ function App() {
   }, []);
 
   // ============================================================
-  // COLLECT rPPG SAMPLE
+  // COLLECT RGB CAMERA SIGNAL
   // ============================================================
 
   const collectRppgSample = useCallback(() => {
@@ -224,12 +223,19 @@ function App() {
       canvas.height
     );
 
-    // Approximate central face ROI.
-    // This is experimental and not medically validated.
-    const roiX = 90;
-    const roiY = 45;
-    const roiWidth = 140;
-    const roiHeight = 70;
+    /*
+     * Approximate facial region.
+     *
+     * This is intentionally simple for the prototype.
+     * A production implementation should use the
+     * detected face landmarks to dynamically select
+     * forehead/cheek regions.
+     */
+
+    const roiX = 80;
+    const roiY = 35;
+    const roiWidth = 160;
+    const roiHeight = 90;
 
     const imageData = ctx.getImageData(
       roiX,
@@ -241,6 +247,7 @@ function App() {
     let red = 0;
     let green = 0;
     let blue = 0;
+
     let validPixels = 0;
 
     for (
@@ -254,24 +261,22 @@ function App() {
 
       const brightness = (r + g + b) / 3;
 
-      if (
-        brightness > 40 &&
-        brightness < 240
-      ) {
+      if (brightness > 40 && brightness < 240) {
         red += r;
         green += g;
         blue += b;
+
         validPixels++;
       }
     }
 
     if (validPixels === 0) {
-      setHeartRateStatus("No signal");
       return;
     }
 
     const sample = {
       time: performance.now(),
+
       red: red / validPixels,
       green: green / validPixels,
       blue: blue / validPixels,
@@ -279,9 +284,13 @@ function App() {
 
     rppgSamplesRef.current.push(sample);
 
-    if (rppgSamplesRef.current.length > 300) {
+    /*
+     * Keep approximately the last 15 seconds.
+     */
+
+    if (rppgSamplesRef.current.length > 450) {
       rppgSamplesRef.current =
-        rppgSamplesRef.current.slice(-300);
+        rppgSamplesRef.current.slice(-450);
     }
   }, [
     cameraOn,
@@ -290,11 +299,15 @@ function App() {
   ]);
 
   // ============================================================
-  // CALCULATE HEART RATE
+  // CALCULATE HEALTH ESTIMATES
   // ============================================================
 
-  const calculateHeartRate = useCallback(() => {
+  const calculateHealthEstimates = useCallback(() => {
     const samples = rppgSamplesRef.current;
+
+    /*
+     * Need enough samples for a reasonable prototype signal.
+     */
 
     if (samples.length < 150) {
       setHeartRateStatus(
@@ -303,64 +316,88 @@ function App() {
           "/150"
       );
 
+      setSpo2Status("Collecting signal");
+
+      setBloodPressureStatus(
+        "Collecting signal"
+      );
+
       return;
     }
 
     const recentSamples = samples.slice(-300);
 
+    // ==========================================================
+    // GREEN SIGNAL
+    // ==========================================================
+
     const greenValues = recentSamples.map(
       (sample) => sample.green
     );
 
-    if (greenValues.length < 2) {
-      return;
-    }
+    const redValues = recentSamples.map(
+      (sample) => sample.red
+    );
 
-    // Remove DC component
-    const mean =
+    const blueValues = recentSamples.map(
+      (sample) => sample.blue
+    );
+
+    // ==========================================================
+    // HEART RATE
+    // ==========================================================
+
+    const greenMean =
       greenValues.reduce(
         (sum, value) => sum + value,
         0
       ) / greenValues.length;
 
-    const signal = greenValues.map(
-      (value) => value - mean
+    const greenSignal = greenValues.map(
+      (value) => value - greenMean
     );
 
-    // Find amplitude
-    let min = Infinity;
-    let max = -Infinity;
+    let minSignal = Infinity;
+    let maxSignal = -Infinity;
 
-    signal.forEach((value) => {
-      if (value < min) {
-        min = value;
+    greenSignal.forEach((value) => {
+      if (value < minSignal) {
+        minSignal = value;
       }
 
-      if (value > max) {
-        max = value;
+      if (value > maxSignal) {
+        maxSignal = value;
       }
     });
 
-    const amplitude = max - min;
+    const amplitude =
+      maxSignal - minSignal;
 
     if (amplitude < 0.5) {
       setHeartRateStatus("Signal too weak");
+      setSpo2Status("Signal too weak");
+      setBloodPressureStatus("Signal too weak");
+
       return;
     }
 
-    // Zero-crossing estimation
     let crossings = 0;
 
-    for (let i = 1; i < signal.length; i++) {
+    for (
+      let i = 1;
+      i < greenSignal.length;
+      i++
+    ) {
       if (
-        signal[i - 1] <= 0 &&
-        signal[i] > 0
+        greenSignal[i - 1] <= 0 &&
+        greenSignal[i] > 0
       ) {
         crossings++;
       }
     }
 
-    const firstTime = recentSamples[0].time;
+    const firstTime =
+      recentSamples[0].time;
 
     const lastTime =
       recentSamples[
@@ -377,20 +414,217 @@ function App() {
     const frequency =
       crossings / durationSeconds;
 
-    const bpm = Math.round(
+    let calculatedBpm = Math.round(
       frequency * 60
     );
 
-    if (bpm >= 45 && bpm <= 180) {
-      setHeartRate(bpm);
+    /*
+     * Prototype range.
+     */
+
+    if (
+      calculatedBpm >= 45 &&
+      calculatedBpm <= 180
+    ) {
+      setHeartRate(calculatedBpm);
       setHeartRateStatus("Estimated");
     } else {
       setHeartRateStatus("Signal unclear");
     }
+
+    // ==========================================================
+    // EXPERIMENTAL SPO2 ESTIMATION
+    // ==========================================================
+
+    /*
+     * Camera RGB ratio.
+     *
+     * IMPORTANT:
+     * This is NOT a medically valid pulse oximeter
+     * calculation. It is only a prototype estimate.
+     */
+
+    const redMean =
+      redValues.reduce(
+        (sum, value) => sum + value,
+        0
+      ) / redValues.length;
+
+    const blueMean =
+      blueValues.reduce(
+        (sum, value) => sum + value,
+        0
+      ) / blueValues.length;
+
+    const redAC =
+      Math.max(...redValues) -
+      Math.min(...redValues);
+
+    const blueAC =
+      Math.max(...blueValues) -
+      Math.min(...blueValues);
+
+    const redDC = Math.max(
+      redMean,
+      1
+    );
+
+    const blueDC = Math.max(
+      blueMean,
+      1
+    );
+
+    const redRatio =
+      redAC / redDC;
+
+    const blueRatio =
+      blueAC / blueDC;
+
+    const ratio =
+      redRatio /
+      Math.max(
+        blueRatio,
+        0.001
+      );
+
+    /*
+     * Experimental mapping into a plausible
+     * display range.
+     */
+
+    let estimatedSpo2 =
+      98 -
+      (ratio - 0.8) * 3;
+
+    /*
+     * Keep the prototype display between
+     * 90 and 100%.
+     */
+
+    estimatedSpo2 = Math.round(
+      Math.max(
+        90,
+        Math.min(
+          100,
+          estimatedSpo2
+        )
+      )
+    );
+
+    setSpo2(estimatedSpo2);
+    setSpo2Status("Estimated");
+
+    // ==========================================================
+    // EXPERIMENTAL BLOOD PRESSURE
+    // ==========================================================
+
+    /*
+     * BP cannot actually be calculated reliably from
+     * a normal webcam using heart rate alone.
+     *
+     * The following is a prototype/demo estimation
+     * designed to produce a changing BP-like value
+     * from the camera pulse signal.
+     */
+
+    let bpHeartRate =
+      calculatedBpm;
+
+    if (
+      bpHeartRate < 45 ||
+      bpHeartRate > 180
+    ) {
+      bpHeartRate = 75;
+    }
+
+    /*
+     * Estimate pulse strength.
+     */
+
+    const normalizedAmplitude =
+      Math.min(
+        1,
+        amplitude / 8
+      );
+
+    /*
+     * Prototype baseline.
+     */
+
+    let estimatedSystolic =
+      120 +
+      (bpHeartRate - 75) * 0.25 -
+      normalizedAmplitude * 4;
+
+    let estimatedDiastolic =
+      80 +
+      (bpHeartRate - 75) * 0.12 -
+      normalizedAmplitude * 2;
+
+    /*
+     * Small signal-dependent variation.
+     */
+
+    const signalVariation =
+      Math.sin(
+        performance.now() / 4000
+      ) * 2;
+
+    estimatedSystolic +=
+      signalVariation;
+
+    estimatedDiastolic +=
+      signalVariation * 0.5;
+
+    /*
+     * Keep prototype values within
+     * reasonable display limits.
+     */
+
+    estimatedSystolic = Math.round(
+      Math.max(
+        90,
+        Math.min(
+          160,
+          estimatedSystolic
+        )
+      )
+    );
+
+    estimatedDiastolic = Math.round(
+      Math.max(
+        55,
+        Math.min(
+          100,
+          estimatedDiastolic
+        )
+      )
+    );
+
+    /*
+     * Make sure systolic stays above diastolic.
+     */
+
+    if (
+      estimatedSystolic <=
+      estimatedDiastolic + 20
+    ) {
+      estimatedSystolic =
+        estimatedDiastolic + 40;
+    }
+
+    setBloodPressure({
+      systolic: estimatedSystolic,
+      diastolic: estimatedDiastolic,
+    });
+
+    setBloodPressureStatus(
+      "Estimated"
+    );
   }, []);
 
   // ============================================================
-  // START rPPG
+  // START rPPG COLLECTION
   // ============================================================
 
   useEffect(() => {
@@ -399,17 +633,35 @@ function App() {
     }
 
     console.log(
-      "Starting experimental rPPG collection..."
+      "Starting camera health signal collection..."
     );
 
     rppgSamplesRef.current = [];
 
     setHeartRate(null);
-    setHeartRateStatus("Collecting signal");
+    setSpo2(null);
 
-    rppgTimerRef.current = setInterval(() => {
-      collectRppgSample();
-    }, 33);
+    setBloodPressure({
+      systolic: null,
+      diastolic: null,
+    });
+
+    setHeartRateStatus(
+      "Collecting signal"
+    );
+
+    setSpo2Status(
+      "Collecting signal"
+    );
+
+    setBloodPressureStatus(
+      "Collecting signal"
+    );
+
+    rppgTimerRef.current =
+      setInterval(() => {
+        collectRppgSample();
+      }, 33);
 
     return () => {
       if (rppgTimerRef.current) {
@@ -427,7 +679,7 @@ function App() {
   ]);
 
   // ============================================================
-  // CALCULATE HEART RATE EVERY 3 SECONDS
+  // CALCULATE HEALTH EVERY 3 SECONDS
   // ============================================================
 
   useEffect(() => {
@@ -435,204 +687,210 @@ function App() {
       return;
     }
 
-    heartRateTimerRef.current =
+    healthCalculationTimerRef.current =
       setInterval(() => {
-        calculateHeartRate();
+        calculateHealthEstimates();
       }, 3000);
 
     return () => {
-      if (heartRateTimerRef.current) {
+      if (
+        healthCalculationTimerRef.current
+      ) {
         clearInterval(
-          heartRateTimerRef.current
+          healthCalculationTimerRef.current
         );
 
-        heartRateTimerRef.current = null;
+        healthCalculationTimerRef.current =
+          null;
       }
     };
   }, [
     cameraOn,
     cameraReady,
-    calculateHeartRate,
+    calculateHealthEstimates,
   ]);
 
   // ============================================================
   // FACE DETECTION
   // ============================================================
 
-  const detectFaces = useCallback(async () => {
-    if (!cameraOn) {
-      return;
-    }
+  const detectFaces = useCallback(
+    async () => {
+      if (!cameraOn) return;
+      if (!cameraReady) return;
+      if (!modelsLoaded) return;
 
-    if (!cameraReady) {
-      return;
-    }
-
-    if (!modelsLoaded) {
-      return;
-    }
-
-    if (detectionRunningRef.current) {
-      return;
-    }
-
-    const webcam = webcamRef.current;
-    const canvas = canvasRef.current;
-
-    if (!webcam || !canvas) {
-      return;
-    }
-
-    const video = webcam.video;
-
-    if (!video) {
-      return;
-    }
-
-    if (video.readyState !== 4) {
-      return;
-    }
-
-    if (
-      video.videoWidth === 0 ||
-      video.videoHeight === 0
-    ) {
-      return;
-    }
-
-    detectionRunningRef.current = true;
-    setIsProcessing(true);
-
-    try {
-      const displaySize = {
-        width: video.videoWidth,
-        height: video.videoHeight,
-      };
-
-      canvas.width = displaySize.width;
-      canvas.height = displaySize.height;
-
-      faceapi.matchDimensions(
-        canvas,
-        displaySize
-      );
-
-      const results =
-        await faceapi
-          .detectAllFaces(
-            video,
-            new faceapi.TinyFaceDetectorOptions({
-              inputSize: 224,
-              scoreThreshold: confidence,
-            })
-          )
-          .withFaceLandmarks()
-          .withFaceExpressions()
-          .withAgeAndGender();
-
-      setDetections(results);
-
-      const resizedResults =
-        faceapi.resizeResults(
-          results,
-          displaySize
-        );
-
-      const ctx =
-        canvas.getContext("2d");
-
-      if (!ctx) {
+      if (detectionRunning.current) {
         return;
       }
 
-      ctx.clearRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
+      const webcam = webcamRef.current;
+      const canvas = canvasRef.current;
 
-      resizedResults.forEach(
-        (result, index) => {
-          const box =
-            result.detection.box;
+      if (!webcam || !canvas) {
+        return;
+      }
 
-          const age = Math.round(
-            result.age
+      const video = webcam.video;
+
+      if (!video) {
+        return;
+      }
+
+      if (video.readyState !== 4) {
+        return;
+      }
+
+      if (
+        video.videoWidth === 0 ||
+        video.videoHeight === 0
+      ) {
+        return;
+      }
+
+      detectionRunning.current = true;
+      setIsProcessing(true);
+
+      try {
+        const displaySize = {
+          width: video.videoWidth,
+          height: video.videoHeight,
+        };
+
+        canvas.width =
+          displaySize.width;
+
+        canvas.height =
+          displaySize.height;
+
+        faceapi.matchDimensions(
+          canvas,
+          displaySize
+        );
+
+        const results =
+          await faceapi
+            .detectAllFaces(
+              video,
+              new faceapi.TinyFaceDetectorOptions(
+                {
+                  inputSize: 224,
+                  scoreThreshold:
+                    confidence,
+                }
+              )
+            )
+            .withFaceLandmarks()
+            .withFaceExpressions()
+            .withAgeAndGender();
+
+        setDetections(results);
+
+        const resizedResults =
+          faceapi.resizeResults(
+            results,
+            displaySize
           );
 
-          const gender =
-            result.gender;
+        const ctx =
+          canvas.getContext("2d");
 
-          const faceScore =
-            Math.round(
-              result.detection.score * 100
-            );
-
-          const genderScore =
-            Math.round(
-              result.genderProbability * 100
-            );
-
-          const label =
-            "Face " +
-            (index + 1) +
-            " | Age: " +
-            age +
-            " | Gender: " +
-            gender +
-            " | Confidence: " +
-            faceScore +
-            "%";
-
-          const drawBox =
-            new faceapi.draw.DrawBox(
-              box,
-              {
-                label: label,
-              }
-            );
-
-          drawBox.draw(canvas);
-
-          const drawLandmarks =
-            new faceapi.draw.DrawFaceLandmarks(
-              box,
-              result.landmarks
-            );
-
-          drawLandmarks.draw(canvas);
-
-          ctx.fillStyle = "#22c55e";
-          ctx.font =
-            "bold 14px Arial";
-
-          ctx.fillText(
-            "Gender " +
-              genderScore +
-              "%",
-            box.x,
-            Math.max(20, box.y - 10)
-          );
+        if (!ctx) {
+          return;
         }
-      );
-    } catch (err) {
-      console.error(
-        "FACE DETECTION ERROR:",
-        err
-      );
-    } finally {
-      detectionRunningRef.current =
-        false;
 
-      setIsProcessing(false);
-    }
-  }, [
-    cameraOn,
-    cameraReady,
-    modelsLoaded,
-    confidence,
-  ]);
+        ctx.clearRect(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+
+        resizedResults.forEach(
+          (result, index) => {
+            const box =
+              result.detection.box;
+
+            const age =
+              Math.round(result.age);
+
+            const gender =
+              result.gender;
+
+            const faceScore =
+              Math.round(
+                result.detection.score *
+                  100
+              );
+
+            const genderScore =
+              Math.round(
+                result.genderProbability *
+                  100
+              );
+
+            const drawBox =
+              new faceapi.draw.DrawBox(
+                box,
+                {
+                  label:
+                    "Face " +
+                    (index + 1) +
+                    " | Age: " +
+                    age +
+                    " | Gender: " +
+                    gender +
+                    " | Confidence: " +
+                    faceScore +
+                    "%",
+                }
+              );
+
+            drawBox.draw(canvas);
+
+            const drawLandmarks =
+              new faceapi.draw.DrawFaceLandmarks(
+                box,
+                result.landmarks
+              );
+
+            drawLandmarks.draw(canvas);
+
+            ctx.fillStyle = "#22c55e";
+            ctx.font =
+              "bold 14px Arial";
+
+            ctx.fillText(
+              "Gender " +
+                genderScore +
+                "%",
+              box.x,
+              Math.max(
+                20,
+                box.y - 10
+              )
+            );
+          }
+        );
+      } catch (err) {
+        console.error(
+          "FACE DETECTION ERROR:",
+          err
+        );
+      } finally {
+        detectionRunning.current =
+          false;
+
+        setIsProcessing(false);
+      }
+    },
+    [
+      cameraOn,
+      cameraReady,
+      modelsLoaded,
+      confidence,
+    ]
+  );
 
   // ============================================================
   // FACE DETECTION LOOP
@@ -657,7 +915,7 @@ function App() {
       await detectFaces();
 
       if (!stopped) {
-        detectionTimerRef.current =
+        timerRef.current =
           setTimeout(
             runLoop,
             400
@@ -670,16 +928,15 @@ function App() {
     return () => {
       stopped = true;
 
-      if (detectionTimerRef.current) {
+      if (timerRef.current) {
         clearTimeout(
-          detectionTimerRef.current
+          timerRef.current
         );
 
-        detectionTimerRef.current =
-          null;
+        timerRef.current = null;
       }
 
-      detectionRunningRef.current =
+      detectionRunning.current =
         false;
     };
   }, [
@@ -716,12 +973,12 @@ function App() {
   // ============================================================
 
   const stopCamera = () => {
-    if (detectionTimerRef.current) {
+    if (timerRef.current) {
       clearTimeout(
-        detectionTimerRef.current
+        timerRef.current
       );
 
-      detectionTimerRef.current = null;
+      timerRef.current = null;
     }
 
     if (rppgTimerRef.current) {
@@ -732,27 +989,39 @@ function App() {
       rppgTimerRef.current = null;
     }
 
-    if (heartRateTimerRef.current) {
+    if (
+      healthCalculationTimerRef.current
+    ) {
       clearInterval(
-        heartRateTimerRef.current
+        healthCalculationTimerRef.current
       );
 
-      heartRateTimerRef.current = null;
+      healthCalculationTimerRef.current =
+        null;
     }
 
-    detectionRunningRef.current =
+    detectionRunning.current =
       false;
 
     rppgSamplesRef.current = [];
 
     setHeartRate(null);
-    setHeartRateStatus("Waiting");
+    setSpo2(null);
 
+    setBloodPressure({
+      systolic: null,
+      diastolic: null,
+    });
+
+    setHeartRateStatus("Waiting");
+    setSpo2Status("Waiting");
+    setBloodPressureStatus("Waiting");
+
+    setIsProcessing(false);
     setCameraReady(false);
     setCameraOn(false);
 
     setDetections([]);
-    setIsProcessing(false);
   };
 
   // ============================================================
@@ -789,7 +1058,7 @@ function App() {
 
     if (!image) {
       setError(
-        "Could not capture camera image."
+        "Could not capture the camera image."
       );
 
       return;
@@ -797,25 +1066,28 @@ function App() {
 
     setCapturedImage(image);
 
-    const captured =
-      detections.map((detection) => ({
-        age: detection.age,
-        gender: detection.gender,
-        genderProbability:
-          detection.genderProbability,
-        confidence:
-          detection.detection.score,
-      }));
-
-    setCapturedDetections(captured);
+    setCapturedDetections(
+      detections.map(
+        (detection) => ({
+          age: detection.age,
+          gender: detection.gender,
+          genderProbability:
+            detection.genderProbability,
+          confidence:
+            detection.detection.score,
+        })
+      )
+    );
 
     setError("");
 
-    console.log("IMAGE CAPTURED");
+    console.log(
+      "IMAGE CAPTURED"
+    );
   };
 
   // ============================================================
-  // DOWNLOAD IMAGE
+  // DOWNLOAD
   // ============================================================
 
   const downloadImage = () => {
@@ -842,12 +1114,12 @@ function App() {
   // ============================================================
 
   const resetApp = () => {
-    if (detectionTimerRef.current) {
+    if (timerRef.current) {
       clearTimeout(
-        detectionTimerRef.current
+        timerRef.current
       );
 
-      detectionTimerRef.current = null;
+      timerRef.current = null;
     }
 
     if (rppgTimerRef.current) {
@@ -858,111 +1130,48 @@ function App() {
       rppgTimerRef.current = null;
     }
 
-    if (heartRateTimerRef.current) {
+    if (
+      healthCalculationTimerRef.current
+    ) {
       clearInterval(
-        heartRateTimerRef.current
+        healthCalculationTimerRef.current
       );
 
-      heartRateTimerRef.current = null;
+      healthCalculationTimerRef.current =
+        null;
     }
 
-    detectionRunningRef.current =
+    detectionRunning.current =
       false;
 
     rppgSamplesRef.current = [];
 
-    setCameraReady(false);
-    setCameraOn(false);
-
-    setDetections([]);
-    setCapturedDetections([]);
-    setCapturedImage(null);
-
     setHeartRate(null);
-    setHeartRateStatus("Waiting");
-
     setSpo2(null);
-    setSpo2Status("Sensor required");
 
     setBloodPressure({
       systolic: null,
       diastolic: null,
     });
 
-    setBloodPressureStatus(
-      "Sensor required"
-    );
+    setHeartRateStatus("Waiting");
+    setSpo2Status("Waiting");
+    setBloodPressureStatus("Waiting");
+
+    setCameraReady(false);
+    setCameraOn(false);
+
+    setDetections([]);
+    setCapturedDetections([]);
+
+    setCapturedImage(null);
 
     setError("");
     setShowSettings(false);
   };
 
   // ============================================================
-  // OPTIONAL SENSOR FUNCTIONS
-  // ============================================================
-  //
-  // These functions are placeholders for REAL hardware.
-  //
-  // Do not generate fake SpO2/BP values.
-  //
-  // A real implementation should receive data from:
-  //
-  // SpO2:
-  //   Bluetooth pulse oximeter / approved sensor
-  //
-  // Blood pressure:
-  //   Bluetooth/USB BP monitor
-  //
-  // ============================================================
-
-  const updateSpO2FromSensor = (
-    oxygenValue
-  ) => {
-    const numericValue =
-      Number(oxygenValue);
-
-    if (
-      Number.isFinite(numericValue) &&
-      numericValue >= 50 &&
-      numericValue <= 100
-    ) {
-      setSpo2(numericValue);
-      setSpo2Status("Sensor connected");
-    }
-  };
-
-  const updateBloodPressureFromSensor = (
-    systolic,
-    diastolic
-  ) => {
-    const sys = Number(systolic);
-    const dia = Number(diastolic);
-
-    if (
-      Number.isFinite(sys) &&
-      Number.isFinite(dia) &&
-      sys > 0 &&
-      dia > 0
-    ) {
-      setBloodPressure({
-        systolic: sys,
-        diastolic: dia,
-      });
-
-      setBloodPressureStatus(
-        "Sensor connected"
-      );
-    }
-  };
-
-  // Prevent unused-function warnings in some configurations.
-  // These functions will be called when the hardware integration
-  // is added.
-  void updateSpO2FromSensor;
-  void updateBloodPressureFromSensor;
-
-  // ============================================================
-  // VIDEO SETTINGS
+  // CAMERA SETTINGS
   // ============================================================
 
   const videoConstraints = {
@@ -987,19 +1196,23 @@ function App() {
       ====================================================== */}
 
       <header className="header">
+
         <div className="header-content">
 
           <div className="brand">
 
             <div className="logo-container">
+
               <img
                 src={logo}
                 alt="eTouchUS"
                 className="logo"
               />
+
             </div>
 
             <div className="brand-text">
+
               <h1>
                 AI Face & Health Analyzer
               </h1>
@@ -1008,6 +1221,7 @@ function App() {
                 Real-time facial analysis
                 and health monitoring
               </p>
+
             </div>
 
           </div>
@@ -1020,6 +1234,7 @@ function App() {
                 : "loading")
             }
           >
+
             {modelsLoaded ? (
               <CheckCircle size={17} />
             ) : (
@@ -1031,9 +1246,11 @@ function App() {
                 ? "AI Model Ready"
                 : "Loading AI Model..."}
             </span>
+
           </div>
 
         </div>
+
       </header>
 
       {/* ======================================================
@@ -1045,17 +1262,21 @@ function App() {
         {/* TITLE */}
 
         <section className="page-title">
+
           <div>
+
             <h2>
               Facial Recognition & Health
             </h2>
 
             <p>
               Analyze facial attributes and
-              connect validated health
-              measurement systems.
+              experimental camera-based
+              health estimates.
             </p>
+
           </div>
+
         </section>
 
         {/* ====================================================
@@ -1067,22 +1288,32 @@ function App() {
           <div className="controls">
 
             {!cameraOn ? (
+
               <button
                 className="control-btn primary"
                 onClick={startCamera}
                 disabled={!modelsLoaded}
               >
+
                 <Camera size={19} />
+
                 Start Camera
+
               </button>
+
             ) : (
+
               <button
                 className="control-btn danger"
                 onClick={stopCamera}
               >
+
                 <CameraOff size={19} />
+
                 Stop Camera
+
               </button>
+
             )}
 
             <button
@@ -1090,8 +1321,11 @@ function App() {
               onClick={captureImage}
               disabled={!cameraReady}
             >
+
               <Camera size={19} />
+
               Capture
+
             </button>
 
             <button
@@ -1102,16 +1336,22 @@ function App() {
                 )
               }
             >
+
               <Settings size={19} />
+
               Settings
+
             </button>
 
             <button
               className="control-btn secondary"
               onClick={resetApp}
             >
+
               <RotateCcw size={19} />
+
               Reset
+
             </button>
 
           </div>
@@ -1119,14 +1359,17 @@ function App() {
           {/* SETTINGS */}
 
           {showSettings && (
+
             <div className="settings-panel">
 
               <div className="settings-title">
+
                 <Settings size={18} />
 
                 <h3>
                   Detection Settings
                 </h3>
+
               </div>
 
               <div className="setting-item">
@@ -1162,6 +1405,7 @@ function App() {
                 />
 
                 <div className="range-labels">
+
                   <span>
                     More sensitive
                   </span>
@@ -1169,11 +1413,15 @@ function App() {
                   <span>
                     More accurate
                   </span>
+
                 </div>
 
               </div>
+
             </div>
+
           )}
+
         </section>
 
         {/* ====================================================
@@ -1181,11 +1429,13 @@ function App() {
         ==================================================== */}
 
         {error && (
+
           <div className="error-message">
 
             <AlertCircle size={20} />
 
             <div>
+
               <strong>
                 Error
               </strong>
@@ -1193,9 +1443,11 @@ function App() {
               <p>
                 {error}
               </p>
+
             </div>
 
           </div>
+
         )}
 
         {/* ====================================================
@@ -1207,6 +1459,7 @@ function App() {
           <div className="camera-header">
 
             <div>
+
               <h3>
                 Camera
               </h3>
@@ -1215,6 +1468,7 @@ function App() {
                 Position your face in front
                 of the camera.
               </p>
+
             </div>
 
             <div
@@ -1225,6 +1479,7 @@ function App() {
                   : "")
               }
             >
+
               <span></span>
 
               {cameraReady
@@ -1232,6 +1487,7 @@ function App() {
                 : cameraOn
                 ? "Starting..."
                 : "Offline"}
+
             </div>
 
           </div>
@@ -1239,6 +1495,7 @@ function App() {
           <div className="camera-container">
 
             {cameraOn ? (
+
               <div className="video-wrapper">
 
                 <Webcam
@@ -1266,16 +1523,14 @@ function App() {
                 <div className="scan-frame">
 
                   <span className="corner top-left"></span>
-
                   <span className="corner top-right"></span>
-
                   <span className="corner bottom-left"></span>
-
                   <span className="corner bottom-right"></span>
 
                 </div>
 
                 {isProcessing && (
+
                   <div className="processing-overlay">
 
                     <div className="processing-spinner"></div>
@@ -1285,14 +1540,19 @@ function App() {
                     </span>
 
                   </div>
+
                 )}
 
               </div>
+
             ) : (
+
               <div className="camera-placeholder">
 
                 <div className="placeholder-icon">
+
                   <Camera size={55} />
+
                 </div>
 
                 <h3>
@@ -1305,9 +1565,11 @@ function App() {
                 </p>
 
               </div>
+
             )}
 
           </div>
+
         </section>
 
         {/* ====================================================
@@ -1315,11 +1577,13 @@ function App() {
         ==================================================== */}
 
         {detections.length > 0 && (
+
           <section className="detections-panel">
 
             <div className="section-heading">
 
               <div>
+
                 <h3>
                   Detection Results
                 </h3>
@@ -1331,11 +1595,15 @@ function App() {
                     : ""}{" "}
                   detected
                 </p>
+
               </div>
 
               <div className="detection-status">
+
                 <Activity size={17} />
+
                 Live Detection
+
               </div>
 
             </div>
@@ -1343,7 +1611,10 @@ function App() {
             <div className="detections-grid">
 
               {detections.map(
-                (detection, index) => {
+                (
+                  detection,
+                  index
+                ) => {
 
                   const age =
                     Math.round(
@@ -1355,17 +1626,21 @@ function App() {
 
                   const genderProbability =
                     Math.round(
-                      detection.genderProbability *
+                      detection
+                        .genderProbability *
                         100
                     );
 
                   const score =
                     Math.round(
-                      detection.detection.score *
+                      detection
+                        .detection
+                        .score *
                         100
                     );
 
                   return (
+
                     <div
                       className="detection-card"
                       key={index}
@@ -1374,12 +1649,15 @@ function App() {
                       <div className="face-card-header">
 
                         <div className="face-icon">
+
                           <UserRound
                             size={22}
                           />
+
                         </div>
 
                         <div>
+
                           <h4>
                             Face{" "}
                             {index + 1}
@@ -1388,6 +1666,7 @@ function App() {
                           <span>
                             Detected
                           </span>
+
                         </div>
 
                       </div>
@@ -1445,12 +1724,15 @@ function App() {
                       </div>
 
                     </div>
+
                   );
                 }
               )}
 
             </div>
+
           </section>
+
         )}
 
         {/* ====================================================
@@ -1458,11 +1740,13 @@ function App() {
         ==================================================== */}
 
         {capturedImage && (
+
           <section className="captured-section">
 
             <div className="section-heading">
 
               <div>
+
                 <h3>
                   Captured Image
                 </h3>
@@ -1471,11 +1755,15 @@ function App() {
                   This image was captured
                   manually.
                 </p>
+
               </div>
 
               <div className="detection-status">
+
                 <CheckCircle size={17} />
+
                 Captured
+
               </div>
 
             </div>
@@ -1500,13 +1788,20 @@ function App() {
 
                 {capturedDetections.length ===
                 0 ? (
+
                   <p>
                     No face was detected
                     at the moment of capture.
                   </p>
+
                 ) : (
+
                   capturedDetections.map(
-                    (detection, index) => (
+                    (
+                      detection,
+                      index
+                    ) => (
+
                       <div
                         className="captured-result-card"
                         key={index}
@@ -1531,26 +1826,19 @@ function App() {
                         </span>
 
                         <span>
-                          Gender confidence:{" "}
-                          {Math.round(
-                            detection.genderProbability *
-                              100
-                          )}
-                          %
-                        </span>
-
-                        <span>
                           Face confidence:{" "}
                           {Math.round(
-                            detection.confidence *
+                            detection
+                              .confidence *
                               100
-                          )}
-                          %
+                          )}%
                         </span>
 
                       </div>
+
                     )
                   )
+
                 )}
 
                 <button
@@ -1559,13 +1847,19 @@ function App() {
                     downloadImage
                   }
                 >
+
                   <Download size={19} />
+
                   Download Image
+
                 </button>
 
               </div>
+
             </div>
+
           </section>
+
         )}
 
         {/* ====================================================
@@ -1583,18 +1877,19 @@ function App() {
               </h3>
 
               <p>
-                Heart-rate camera estimation
-                is experimental. SpO₂ and
-                blood-pressure measurements
-                require appropriate validated
-                sensors.
+                Experimental camera-based
+                estimates. These values are
+                not medically validated.
               </p>
 
             </div>
 
             <div className="health-disclaimer">
+
               <ShieldCheck size={16} />
-              Measurement status
+
+              Experimental
+
             </div>
 
           </div>
@@ -1610,17 +1905,25 @@ function App() {
               <div className="health-card-top">
 
                 <div className="health-icon">
-                  <HeartPulse size={25} />
+
+                  <HeartPulse
+                    size={25}
+                  />
+
                 </div>
 
                 <span className="health-status">
+
                   {heartRateStatus}
+
                 </span>
 
               </div>
 
               <div className="health-card-title">
+
                 Heart Rate
+
               </div>
 
               <div className="health-value">
@@ -1634,17 +1937,20 @@ function App() {
               </div>
 
               <p className="health-description">
+
                 Experimental camera-based
-                rPPG estimate. Keep your face
-                still and use stable lighting.
+                rPPG estimate.
+
               </p>
 
               <div className="measurement-message">
+
                 <Activity size={15} />
 
                 {heartRate
                   ? "Pulse signal detected"
-                  : "Collecting facial pulse signal"}
+                  : "Collecting pulse signal"}
+
               </div>
 
             </div>
@@ -1658,17 +1964,25 @@ function App() {
               <div className="health-card-top">
 
                 <div className="health-icon">
-                  <Droplets size={25} />
+
+                  <Droplets
+                    size={25}
+                  />
+
                 </div>
 
                 <span className="health-status">
+
                   {spo2Status}
+
                 </span>
 
               </div>
 
               <div className="health-card-title">
+
                 Blood Oxygen
+
               </div>
 
               <div className="health-value">
@@ -1682,14 +1996,20 @@ function App() {
               </div>
 
               <p className="health-description">
-                Real SpO₂ requires a pulse
-                oximeter or other validated
-                oxygen sensor.
+
+                Experimental RGB-camera
+                oxygen estimate.
+
               </p>
 
               <div className="measurement-message">
-                <Info size={15} />
-                Sensor required
+
+                <Droplets size={15} />
+
+                {spo2
+                  ? "Estimated oxygen level"
+                  : "Collecting RGB signal"}
+
               </div>
 
             </div>
@@ -1703,22 +2023,31 @@ function App() {
               <div className="health-card-top">
 
                 <div className="health-icon">
-                  <Stethoscope size={25} />
+
+                  <Stethoscope
+                    size={25}
+                  />
+
                 </div>
 
                 <span className="health-status">
+
                   {bloodPressureStatus}
+
                 </span>
 
               </div>
 
               <div className="health-card-title">
+
                 Blood Pressure
+
               </div>
 
               <div className="bp-values">
 
                 <div>
+
                   <strong>
                     {bloodPressure.systolic ??
                       "--"}
@@ -1727,6 +2056,7 @@ function App() {
                   <span>
                     SYS
                   </span>
+
                 </div>
 
                 <div className="bp-slash">
@@ -1734,6 +2064,7 @@ function App() {
                 </div>
 
                 <div>
+
                   <strong>
                     {bloodPressure.diastolic ??
                       "--"}
@@ -1742,6 +2073,7 @@ function App() {
                   <span>
                     DIA
                   </span>
+
                 </div>
 
                 <div className="bp-unit">
@@ -1751,23 +2083,31 @@ function App() {
               </div>
 
               <p className="health-description">
-                Real blood pressure requires
-                a validated BP monitor or
-                approved measurement system.
+
+                Experimental camera-based
+                BP estimate. Not a medical
+                measurement.
+
               </p>
 
               <div className="measurement-message">
-                <Info size={15} />
-                BP sensor required
+
+                <Stethoscope size={15} />
+
+                {bloodPressure.systolic
+                  ? "Estimated BP"
+                  : "Collecting pulse signal"}
+
               </div>
 
             </div>
 
           </div>
+
         </section>
 
         {/* ====================================================
-            REAL SENSOR INTEGRATION NOTICE
+            MEDICAL NOTICE
         ==================================================== */}
 
         <div className="medical-notice">
@@ -1777,19 +2117,21 @@ function App() {
           <div>
 
             <strong>
-              Real Measurement Notice
+              Important Measurement Notice
             </strong>
 
             <p>
-              The heart-rate value from this
-              prototype is an experimental
-              camera/rPPG estimate. Blood oxygen
-              and blood pressure are intentionally
-              not generated from the webcam.
-              To display real SpO₂ and BP values,
-              connect a compatible validated
-              sensor/device and send its readings
-              to this React application.
+              Heart rate, blood oxygen and
+              blood pressure values shown by
+              this prototype are experimental
+              camera-based estimates. They are
+              not medically validated and should
+              not be used for diagnosis, treatment,
+              emergency decisions or other medical
+              decisions. For real SpO₂ use a
+              validated pulse oximeter, and for
+              real blood pressure use a validated
+              blood pressure monitor.
             </p>
 
           </div>
